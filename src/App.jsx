@@ -6,6 +6,9 @@ const SUPABASE_URL = "https://bjbsprypxrmekottuqdg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_I7BGVOOAjXcPlLrLZfdsUw_UeuQIyNm";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ─── ANTHROPIC ───────────────────────────────────────────────────────────────
+const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY;
+
 // ─── BRAND ───────────────────────────────────────────────────────────────────
 const B = {
   black:"#0A0A0A", charcoal:"#111111", graphite:"#1C1C1C", smoke:"#2A2A2A",
@@ -129,17 +132,31 @@ ${rs.map(r=>`
 };
 
 // ─── AI PARSE ─────────────────────────────────────────────────────────────────
-const parseFromImage = async (b64, mime) => {
+const parseFromImages = async (files) => {
+  // Build content array — one image block per file plus instruction text
+  const imageBlocks = await Promise.all(files.map(async (file) => {
+    const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
+    return { type:"image", source:{ type:"base64", media_type:file.type, data:b64 }};
+  }));
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST", headers:{"Content-Type":"application/json"},
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version":"2023-06-01" },
     body: JSON.stringify({
-      model:"claude-sonnet-4-20250514", max_tokens:1000,
+      model:"claude-sonnet-4-20250514", max_tokens:1500,
       messages:[{ role:"user", content:[
-        { type:"image", source:{ type:"base64", media_type:mime, data:b64 }},
-        { type:"text", text:`Extract the recipe from this image. Return ONLY raw JSON, no markdown fences:\n{"title":"","category":"Breakfast|Lunch|Dinner|Dessert|Snacks|Drinks|Sides","tags":[],"servings":4,"prepTime":"","cookTime":"","image":"🍽️","ingredients":[],"instructions":[],"notes":""}` }
+        ...imageBlocks,
+        { type:"text", text:`These ${files.length} image(s) may show different parts of the same recipe (e.g. ingredients on one page, instructions on another). Extract and combine all information into one complete recipe. If images appear to be different unrelated recipes, use only the first one. Return ONLY raw JSON, no markdown:
+{"title":"","category":"Breakfast|Lunch|Dinner|Dessert|Snacks|Drinks|Sides","tags":[],"servings":4,"prepTime":"","cookTime":"","image":"🍽️","ingredients":[],"instructions":[],"notes":""}` }
       ]}]
     })
   });
+
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err?.error?.message || `API error ${res.status}`);
+  }
+
   const d = await res.json();
   const t = d.content?.find(b=>b.type==="text")?.text || "{}";
   return JSON.parse(t.replace(/```json|```/g,"").trim());
@@ -642,13 +659,21 @@ export default function App() {
   };
 
   const handleUpload = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
     setUploading(true);
     try {
-      const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
-      const parsed = await parseFromImage(b64, file.type);
+      const parsed = await parseFromImages(files);
+      if (!parsed.title) throw new Error("No recipe found");
       await saveRecipe(parsed);
-    } catch { showToast("Couldn't read that image. Try a clearer photo.", "err"); }
+    } catch (err) {
+      const msg = err.message?.includes("No recipe")
+        ? "No recipe found in those photos. Try clearer images."
+        : err.message?.includes("API error")
+        ? "Service unavailable. Please try again in a moment."
+        : "Couldn't read that image. Try a brighter, less cropped photo.";
+      showToast(msg, "err");
+    }
     finally { setUploading(false); e.target.value=""; }
   };
 
@@ -749,10 +774,10 @@ export default function App() {
                 <div style={{height:1,background:B.graphite,margin:"6px 12px 12px"}}/>
                 <div style={{padding:"0 12px 12px"}}>
                   <div style={{fontSize:"0.56rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:8}}>Actions</div>
-                  <input type="file" accept="image/*" ref={fileRef} style={{display:"none"}} onChange={handleUpload}/>
+                  <input type="file" accept="image/*" multiple ref={fileRef} style={{display:"none"}} onChange={handleUpload}/>
                   <button onClick={()=>{ fileRef.current.click(); setSidebarOpen(false); }} disabled={uploading}
                     style={{width:"100%",padding:"9px 12px",background:B.gold,color:B.black,border:"none",borderRadius:3,fontSize:"0.74rem",fontWeight:600,letterSpacing:"0.08em",cursor:"pointer",marginBottom:7,display:"flex",alignItems:"center",gap:7,fontFamily:"'Jost',sans-serif"}}>
-                    {uploading?<><span style={{display:"inline-block",width:11,height:11,border:`1.5px solid rgba(0,0,0,0.25)`,borderTopColor:B.black,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Scanning…</>:<>📷 Add from Photo</>}
+                    {uploading?<><span style={{display:"inline-block",width:11,height:11,border:`1.5px solid rgba(0,0,0,0.25)`,borderTopColor:B.black,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Scanning…</>:<>📷 Add Recipe Photo(s)</>}
                   </button>
                   <button onClick={()=>{ setShareTarget({collection:true}); setSidebarOpen(false); }} disabled={recipes.length===0}
                     style={{width:"100%",padding:"9px 12px",background:"none",color:B.silver,border:`1px solid ${B.smoke}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",marginBottom:7,fontFamily:"'Jost',sans-serif"}}>

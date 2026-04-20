@@ -23,6 +23,7 @@ const EBOOK_FOOTER = "Gathered · usegathered.app";
 
 const CATEGORIES = ["All","Breakfast","Lunch","Dinner","Dessert","Snacks","Drinks","Sides"];
 const TABS = ["Collection","Meal Planner"];
+const FREE_RECIPE_LIMIT = 10;
 
 // ─── FORMATTERS ───────────────────────────────────────────────────────────────
 const fmtSMS = (r, senderName) =>
@@ -431,6 +432,60 @@ function RecipeModal({ recipe, onClose, onShare }) {
   );
 }
 
+// ─── UPGRADE MODAL ────────────────────────────────────────────────────────────
+function UpgradeModal({ onClose, onUpgrade, recipeCount }) {
+  return (
+    <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{...S.shareBox,maxWidth:440}}>
+        <div style={{padding:"36px 32px 28px",textAlign:"center",borderBottom:`1px solid ${B.smoke}`}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
+            <SprigMark size={44} color={B.gold}/>
+          </div>
+          <div style={{fontSize:"0.6rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.gold,marginBottom:10}}>Gathered Pro</div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",fontWeight:300,color:B.white,lineHeight:1.15,marginBottom:12}}>
+            Every recipe<br/>worth keeping.
+          </div>
+          <div style={{fontSize:"0.84rem",color:B.silver,fontWeight:300,lineHeight:1.7}}>
+            {recipeCount >= FREE_RECIPE_LIMIT
+              ? `You've gathered all ${FREE_RECIPE_LIMIT} of your free recipes. Upgrade to keep building your collection.`
+              : "Unlock unlimited recipes, your personalized ebook, meal planning and more."}
+          </div>
+        </div>
+
+        <div style={{padding:"24px 32px"}}>
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6,marginBottom:22}}>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"3rem",color:B.gold,lineHeight:1,fontWeight:300}}>$9.99</span>
+            <span style={{fontSize:"0.82rem",color:B.mid}}>/month</span>
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+            {[
+              "Unlimited recipes + AI scanning",
+              "Personalized ebook generation",
+              "SMS sharing & export",
+              "Meal planner + grocery list (V2)",
+              "Cancel anytime",
+            ].map(f=>(
+              <div key={f} style={{display:"flex",alignItems:"center",gap:11,fontSize:"0.86rem",color:B.fog,fontWeight:300}}>
+                <span style={{color:B.gold,fontSize:"0.7rem"}}>✦</span>{f}
+              </div>
+            ))}
+          </div>
+
+          <button onClick={onUpgrade}
+            style={{width:"100%",padding:"14px",background:B.gold,color:B.black,border:"none",borderRadius:3,fontSize:"0.84rem",fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",marginBottom:10,fontFamily:"'Jost',sans-serif"}}>
+            Upgrade to Pro →
+          </button>
+          <button onClick={onClose}
+            style={{width:"100%",padding:"10px",background:"none",color:B.mid,border:"none",fontSize:"0.76rem",cursor:"pointer",fontFamily:"'Jost',sans-serif"}}>
+            Maybe later
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MEAL PLANNER TAB ─────────────────────────────────────────────────────────
 function MealPlannerTab({ recipes }) {
   const today = new Date();
@@ -580,6 +635,8 @@ function MealPlannerTab({ recipes }) {
 export default function App() {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [subscription, setSubscription] = useState({ tier: "free", status: "free" });
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [recipes, setRecipes] = useState([]);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
@@ -615,7 +672,63 @@ export default function App() {
     const avatar = name.slice(0,2).toUpperCase();
     setUser({ id: authUser.id, name, avatar, email: authUser.email });
     loadRecipes(authUser.id);
+    loadSubscription(authUser.id);
   };
+
+  const loadSubscription = async (userId) => {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (data) setSubscription({ tier: data.tier || "free", status: data.status || "free", customerId: data.stripe_customer_id });
+    else setSubscription({ tier: "free", status: "free" });
+  };
+
+  const isPro = subscription.tier === "pro" && (subscription.status === "active" || subscription.status === "trialing");
+
+  const handleUpgrade = async () => {
+    try {
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, userEmail: user.email }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else showToast("Couldn\'t open checkout. Please try again.", "err");
+    } catch {
+      showToast("Something went wrong. Please try again.", "err");
+    }
+  };
+
+  const handleManageBilling = async () => {
+    if (!subscription.customerId) return showToast("No billing info found.", "err");
+    try {
+      const res = await fetch("/api/customer-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: subscription.customerId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      showToast("Couldn\'t open billing portal.", "err");
+    }
+  };
+
+  // Check for upgrade success in URL after Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "true") {
+      showToast("Welcome to Gathered Pro! 🌾", "ok");
+      setTimeout(() => { if (user) loadSubscription(user.id); }, 2000);
+      window.history.replaceState({}, "", "/");
+    }
+    if (params.get("upgrade_canceled") === "true") {
+      window.history.replaceState({}, "", "/");
+    }
+  }, [user]);
 
   // ── Recipes CRUD ───────────────────────────────────────────────────────────
   const loadRecipes = async (userId) => {
@@ -749,11 +862,18 @@ export default function App() {
                 overflowY:"auto",
                 boxShadow:sidebarOpen?"4px 0 28px rgba(0,0,0,0.5)":"none",
               }}>
-                <div style={{padding:"16px 14px 12px",borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${B.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.65rem",color:B.gold,fontWeight:600,flexShrink:0}}>{user?.avatar}</div>
-                  <div>
-                    <div style={{color:B.white,fontSize:"0.82rem",fontWeight:500}}>{user?.name}</div>
-                    <div style={{color:B.mid,fontSize:"0.64rem",marginTop:1}}>{recipes.length} recipe{recipes.length!==1?"s":""}</div>
+                <div style={{padding:"16px 14px 12px",borderBottom:`1px solid ${B.graphite}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${B.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.65rem",color:B.gold,fontWeight:600,flexShrink:0}}>{user?.avatar}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{color:B.white,fontSize:"0.82rem",fontWeight:500}}>{user?.name}</div>
+                      <div style={{color:B.mid,fontSize:"0.64rem",marginTop:1}}>
+                        {recipes.length}{!isPro?`/${FREE_RECIPE_LIMIT}`:""} recipe{recipes.length!==1?"s":""}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"inline-block",fontSize:"0.56rem",letterSpacing:"0.18em",textTransform:"uppercase",padding:"3px 9px",borderRadius:2,background:isPro?B.gold:"transparent",color:isPro?B.black:B.mid,border:isPro?"none":`1px solid ${B.smoke}`,fontWeight:600}}>
+                    {isPro ? "✦ Pro" : "Free"}
                   </div>
                 </div>
                 <div style={{padding:"14px 12px 8px"}}>
@@ -781,6 +901,17 @@ export default function App() {
                     style={{width:"100%",padding:"9px 12px",background:"none",color:B.gold,border:`1px solid ${B.goldD}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",marginBottom:7,fontFamily:"'Jost',sans-serif"}}>
                     📚 Generate Ebook
                   </button>
+                  {isPro ? (
+                    <button onClick={()=>{ handleManageBilling(); setSidebarOpen(false); }}
+                      style={{width:"100%",padding:"9px 12px",background:"none",color:B.silver,border:`1px solid ${B.smoke}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",marginBottom:7,fontFamily:"'Jost',sans-serif"}}>
+                      ⚙ Manage Billing
+                    </button>
+                  ) : (
+                    <button onClick={()=>{ setSidebarOpen(false); setShowUpgrade(true); }}
+                      style={{width:"100%",padding:"9px 12px",background:B.gold,color:B.black,border:"none",borderRadius:3,fontSize:"0.74rem",fontWeight:600,letterSpacing:"0.08em",cursor:"pointer",marginBottom:7,fontFamily:"'Jost',sans-serif"}}>
+                      ✦ Upgrade to Pro
+                    </button>
+                  )}
                   <button onClick={handleSignOut}
                     style={{width:"100%",padding:"9px 12px",background:"none",color:B.mid,border:`1px solid ${B.graphite}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",fontFamily:"'Jost',sans-serif"}}>
                     Sign Out
@@ -859,6 +990,7 @@ export default function App() {
           {toast.msg}
         </div>
       )}
+      {showUpgrade && <UpgradeModal onClose={()=>setShowUpgrade(false)} onUpgrade={handleUpgrade} recipeCount={recipes.length}/>}
     </>
   );
 }

@@ -7,7 +7,7 @@ const SUPABASE_KEY = "sb_publishable_I7BGVOOAjXcPlLrLZfdsUw_UeuQIyNm";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── ANTHROPIC ───────────────────────────────────────────────────────────────
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY;
+// API key is used server-side only in /api/scan.js — never exposed to browser
 
 // ─── BRAND ───────────────────────────────────────────────────────────────────
 const B = {
@@ -133,34 +133,28 @@ ${rs.map(r=>`
 
 // ─── AI PARSE ─────────────────────────────────────────────────────────────────
 const parseFromImages = async (files) => {
-  // Build content array — one image block per file plus instruction text
-  const imageBlocks = await Promise.all(files.map(async (file) => {
+  // Convert files to base64
+  const images = await Promise.all(files.map(async (file) => {
     const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
-    return { type:"image", source:{ type:"base64", media_type:file.type, data:b64 }};
+    return { b64, mime: file.type };
   }));
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version":"2023-06-01" },
-    body: JSON.stringify({
-      model:"claude-sonnet-4-20250514", max_tokens:1500,
-      messages:[{ role:"user", content:[
-        ...imageBlocks,
-        { type:"text", text:`These ${files.length} image(s) may show different parts of the same recipe (e.g. ingredients on one page, instructions on another). Extract and combine all information into one complete recipe. If images appear to be different unrelated recipes, use only the first one. Return ONLY raw JSON, no markdown:
-{"title":"","category":"Breakfast|Lunch|Dinner|Dessert|Snacks|Drinks|Sides","tags":[],"servings":4,"prepTime":"","cookTime":"","image":"🍽️","ingredients":[],"instructions":[],"notes":""}` }
-      ]}]
-    })
+  // Call our secure Vercel serverless function — no CORS, no exposed keys
+  const res = await fetch("/api/scan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ images }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(()=>({}));
-    throw new Error(err?.error?.message || `API error ${res.status}`);
+    throw new Error(err?.error || `Error ${res.status}`);
   }
 
-  const d = await res.json();
-  const t = d.content?.find(b=>b.type==="text")?.text || "{}";
-  return JSON.parse(t.replace(/```json|```/g,"").trim());
+  const data = await res.json();
+  return data.recipe;
 };
+
 
 // ─── SPRIG MARK ───────────────────────────────────────────────────────────────
 function SprigMark({ size=32, color="#C9A84C" }) {

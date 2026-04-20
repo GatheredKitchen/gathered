@@ -8,7 +8,7 @@ const B = {
   goldBg:"rgba(201,168,76,0.08)", goldBd:"rgba(201,168,76,0.22)",
 };
 
-const APP_NAME    = "Gathered";
+const APP_NAME = "Gathered";
 const TAGLINE     = "Every recipe worth keeping.";
 const TAGLINE_ALT = "Your recipes. Gathered.";
 const SMS_FOOTER  = "Shared via Gathered · usegathered.app";
@@ -169,6 +169,24 @@ const parseFromImage = async (b64, mime) => {
   return JSON.parse(t.replace(/```json|```/g,"").trim());
 };
 
+// ─── SPRIG MARK COMPONENT ─────────────────────────────────────────────────────
+function SprigMark({ size = 32, color = "#C9A84C" }) {
+  const s = size;
+  const sc = s / 48;
+  return (
+    <svg width={s} height={Math.round(s * 1.4)} viewBox="0 0 48 67" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="24" y1="65" x2="24" y2="8" stroke={color} strokeWidth="2"/>
+      <path d="M24 52 Q6 42 4 28" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 38 Q4 28 2 14" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 52 Q42 42 44 28" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 38 Q44 28 46 14" stroke={color} strokeWidth="2" fill="none"/>
+      <ellipse cx="24" cy="8" rx="6" ry="9" fill={color}/>
+      <ellipse cx="15" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(-22 15 13)"/>
+      <ellipse cx="33" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(22 33 13)"/>
+    </svg>
+  );
+}
+
 // ─── SHARE MODAL ──────────────────────────────────────────────────────────────
 function ShareModal({ recipe, user, allRecipes, onClose }) {
   const [mode, setMode] = useState(recipe ? "single" : "collection");
@@ -277,23 +295,33 @@ function MealPlannerTab({ recipes }) {
   const sow = new Date(today); sow.setDate(today.getDate()-today.getDay());
   const week = Array.from({length:7},(_,i)=>{ const d=new Date(sow); d.setDate(sow.getDate()+i); return d; });
 
+  // Demo grocery list items by aisle
+  const groceryPreview = {
+    "🥩 Meat & Seafood": ["3 lb chuck roast","1 lb ground chicken"],
+    "🥬 Produce": ["4 carrots","4 potatoes","1 onion","3 Thai chilies","1 cup Thai basil","1 lemon"],
+    "🧀 Dairy & Refrigerated": ["¾ cup heavy cream","6 tbsp butter"],
+    "🥫 Pantry & Dry Goods": ["2 cups all-purpose flour","1/3 cup sugar","2 cups beef broth","2 tbsp oyster sauce","1 tbsp soy sauce","1 tsp fish sauce","2 tbsp Worcestershire sauce"],
+    "🧂 Spices & Staples": ["Salt & pepper","1 tbsp baking powder","1 tsp sugar","2 tbsp oil"],
+  };
+
   return (
     <div style={{padding:"40px",maxWidth:1400,margin:"0 auto"}}>
 
-      {/* Banner */}
+      {/* Coming Soon Banner */}
       <div style={{background:B.charcoal,border:`1px solid ${B.goldBd}`,borderRadius:6,marginBottom:44}}>
         <div style={{padding:"36px 44px"}}>
           <div style={{display:"inline-block",fontSize:"0.6rem",letterSpacing:"0.3em",color:B.gold,border:`1px solid ${B.goldD}`,padding:"4px 14px",borderRadius:2,marginBottom:16,textTransform:"uppercase"}}>Coming in V2</div>
-          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2.5rem",fontWeight:300,color:B.white,marginBottom:10}}>Gathered Meal Planner</div>
-          <div style={{fontSize:"0.88rem",color:B.silver,fontWeight:300,lineHeight:1.8,marginBottom:30,maxWidth:600}}>
-            Drop any recipe onto a day of the week. Gathered creates a calendar event on your phone with a deep link that opens the full recipe — ingredients, instructions, and all — directly in the app.
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2.5rem",fontWeight:300,color:B.white,marginBottom:10}}>Meal Planner + Smart Grocery List</div>
+          <div style={{fontSize:"0.88rem",color:B.silver,fontWeight:300,lineHeight:1.8,marginBottom:30,maxWidth:640}}>
+            Plan your week by dropping recipes onto any day. Gathered builds your grocery list automatically — ingredients combined, quantities scaled, grouped by aisle — then sends it straight to your phone.
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))",gap:10}}>
             {[
               ["📅","Drag & drop recipes onto any day or week"],
-              ["📲","Export to Apple Calendar or Google Calendar"],
+              ["📲","Export meal plan to Apple or Google Calendar"],
               ["🔗","Deep link opens full recipe inside Gathered"],
-              ["🛒","Auto-generate a grocery list from your week"],
+              ["🛒","AI grocery list — combined, scaled & aisle-sorted"],
+              ["📋","Send list to phone Reminders or via SMS"],
               ["🔔","Optional meal reminder notifications"],
             ].map(([icon,txt])=>(
               <div key={txt} style={{display:"flex",alignItems:"center",gap:14,background:B.graphite,padding:"12px 18px",borderRadius:3}}>
@@ -305,66 +333,147 @@ function MealPlannerTab({ recipes }) {
         </div>
       </div>
 
-      {/* Week preview */}
-      <div style={{fontSize:"0.6rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:14}}>
-        Preview — Week of {today.toLocaleDateString("en-US",{month:"long",day:"numeric"}).toUpperCase()}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8,marginBottom:36}}>
-        {week.map((d,i)=>{
-          const isT = d.toDateString()===today.toDateString();
-          return (
-            <div key={i} style={{background:B.charcoal,border:`1px solid ${isT?B.goldD:B.smoke}`,borderRadius:3,overflow:"hidden",opacity:isT?1:0.6}}>
-              <div style={{padding:"10px 10px 8px",borderBottom:`1px solid ${B.smoke}`,textAlign:"center"}}>
-                <div style={{fontSize:"0.56rem",letterSpacing:"0.2em",textTransform:"uppercase",color:isT?B.gold:B.mid,marginBottom:4}}>{dow[i]}</div>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.4rem",color:isT?B.white:B.silver,lineHeight:1}}>{d.getDate()}</div>
-              </div>
-              <div style={{padding:"8px 6px"}}>
-                {["Breakfast","Lunch","Dinner"].map(m=>(
-                  <div key={m} style={{marginBottom:5}}>
-                    <div style={{fontSize:"0.5rem",letterSpacing:"0.15em",textTransform:"uppercase",color:B.mid,marginBottom:3}}>{m}</div>
-                    <div style={{background:B.graphite,borderRadius:2,height:32,display:"flex",alignItems:"center",justifyContent:"center",border:`1px dashed ${B.smoke}`}}>
-                      <span style={{color:B.smoke,fontSize:"0.85rem"}}>+</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Two-column layout: Calendar + Grocery List side by side */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:28,marginBottom:36}}>
 
-      {/* Recipe drawer */}
-      <div style={{marginBottom:32}}>
-        <div style={{fontSize:"0.6rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:12}}>Your Recipes — Drag to Calendar</div>
-        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-          {recipes.map(r=>(
-            <div key={r.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",background:B.charcoal,border:`1px solid ${B.smoke}`,borderRadius:3,opacity:0.65,cursor:"not-allowed"}}>
-              <span style={{fontSize:"1.35rem"}}>{r.image}</span>
-              <div>
-                <div style={{fontSize:"0.84rem",color:B.fog}}>{r.title}</div>
-                <div style={{fontSize:"0.7rem",color:B.mid,marginTop:2}}>{r.category} · {r.prepTime}</div>
-              </div>
-            </div>
-          ))}
-          {recipes.length===0 && <div style={{fontSize:"0.82rem",color:B.mid,padding:"10px 0"}}>Add recipes to your collection first</div>}
-        </div>
-      </div>
-
-      {/* Calendar integration explainer */}
-      <div style={{display:"flex",gap:20,background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:4,padding:"24px 28px"}}>
-        <div style={{fontSize:"1.8rem",flexShrink:0,marginTop:2}}>📲</div>
+        {/* LEFT — Calendar preview */}
         <div>
-          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.1rem",color:B.white,marginBottom:10}}>How Phone Calendar Integration Works</div>
-          <div style={{fontSize:"0.84rem",color:B.silver,fontWeight:300,lineHeight:1.85}}>
-            Drop a recipe on a day and Gathered creates a calendar event at your preferred meal time. The event includes a deep link —&nbsp;
-            <span style={{color:B.gold,fontFamily:"monospace",fontSize:"0.8rem"}}>gathered://recipe/123</span>
-            &nbsp;— that opens the full recipe card directly in the app. One tap from your calendar reminder straight to the recipe. Compatible with Apple Calendar, Google Calendar, and Outlook.
+          <div style={{fontSize:"0.6rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:14}}>
+            Preview — Week of {today.toLocaleDateString("en-US",{month:"long",day:"numeric"}).toUpperCase()}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:20}}>
+            {week.map((d,i)=>{
+              const isT = d.toDateString()===today.toDateString();
+              return (
+                <div key={i} style={{background:B.charcoal,border:`1px solid ${isT?B.goldD:B.smoke}`,borderRadius:3,overflow:"hidden",opacity:isT?1:0.6}}>
+                  <div style={{padding:"8px 6px",borderBottom:`1px solid ${B.smoke}`,textAlign:"center"}}>
+                    <div style={{fontSize:"0.52rem",letterSpacing:"0.18em",textTransform:"uppercase",color:isT?B.gold:B.mid,marginBottom:3}}>{dow[i]}</div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.3rem",color:isT?B.white:B.silver,lineHeight:1}}>{d.getDate()}</div>
+                  </div>
+                  <div style={{padding:"6px 5px"}}>
+                    {["Breakfast","Lunch","Dinner"].map(m=>(
+                      <div key={m} style={{marginBottom:4}}>
+                        <div style={{fontSize:"0.48rem",letterSpacing:"0.12em",textTransform:"uppercase",color:B.mid,marginBottom:2}}>{m}</div>
+                        {/* Show demo recipe on today's dinner */}
+                        {isT && m==="Dinner" ? (
+                          <div style={{background:"rgba(201,168,76,0.08)",border:`1px solid ${B.goldD}`,borderRadius:2,padding:"4px 5px",fontSize:"0.62rem",color:B.gold,lineHeight:1.3}}>
+                            🥩 Pot Roast
+                          </div>
+                        ) : (
+                          <div style={{background:B.graphite,borderRadius:2,height:28,display:"flex",alignItems:"center",justifyContent:"center",border:`1px dashed ${B.smoke}`}}>
+                            <span style={{color:B.smoke,fontSize:"0.75rem"}}>+</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Recipe Drawer */}
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:"0.6rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:10}}>Your Recipes — Drag to Calendar</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {recipes.map(r=>(
+                <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:B.charcoal,border:`1px solid ${B.smoke}`,borderRadius:3,opacity:0.65,cursor:"not-allowed"}}>
+                  <span style={{fontSize:"1.2rem"}}>{r.image}</span>
+                  <div>
+                    <div style={{fontSize:"0.82rem",color:B.fog}}>{r.title}</div>
+                    <div style={{fontSize:"0.68rem",color:B.mid,marginTop:1}}>{r.category} · {r.prepTime}</div>
+                  </div>
+                </div>
+              ))}
+              {recipes.length===0 && <div style={{fontSize:"0.82rem",color:B.mid,padding:"10px 0"}}>Add recipes to your collection first</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — Grocery List Preview */}
+        <div>
+          <div style={{fontSize:"0.6rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:14}}>
+            AI Grocery List — Preview
+          </div>
+          <div style={{background:B.charcoal,border:`1px solid ${B.smoke}`,borderRadius:6,overflow:"hidden"}}>
+            {/* List header */}
+            <div style={{padding:"14px 18px",borderBottom:`1px solid ${B.smoke}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.05rem",color:B.white}}>This Week's List</div>
+                <div style={{fontSize:"0.68rem",color:B.mid,marginTop:2}}>3 recipes · 21 items</div>
+              </div>
+              <div style={{fontSize:"0.6rem",letterSpacing:"0.15em",textTransform:"uppercase",color:B.gold,border:`1px solid ${B.goldD}`,padding:"3px 10px",borderRadius:2}}>Demo</div>
+            </div>
+
+            {/* Aisle groups */}
+            <div style={{maxHeight:340,overflowY:"auto"}}>
+              {Object.entries(groceryPreview).map(([aisle, items]) => (
+                <div key={aisle} style={{borderBottom:`1px solid ${B.graphite}`}}>
+                  <div style={{padding:"8px 18px 4px",fontSize:"0.65rem",letterSpacing:"0.15em",textTransform:"uppercase",color:B.gold,background:B.graphite}}>
+                    {aisle}
+                  </div>
+                  {items.map((item,i) => (
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 18px",borderBottom:`1px solid ${B.graphite}`}}>
+                      <div style={{width:14,height:14,border:`1px solid ${B.smoke}`,borderRadius:2,flexShrink:0}}/>
+                      <span style={{fontSize:"0.82rem",color:B.fog,fontWeight:300}}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Share buttons */}
+            <div style={{padding:"12px 14px",borderTop:`1px solid ${B.smoke}`,display:"flex",gap:8}}>
+              <div style={{flex:1,padding:"9px 0",background:B.gold,color:B.black,borderRadius:3,fontSize:"0.72rem",fontWeight:600,letterSpacing:"0.08em",textAlign:"center",opacity:0.5,cursor:"not-allowed"}}>
+                📲 Send to Phone
+              </div>
+              <div style={{flex:1,padding:"9px 0",background:"none",color:B.silver,border:`1px solid ${B.smoke}`,borderRadius:3,fontSize:"0.72rem",letterSpacing:"0.06em",textAlign:"center",opacity:0.5,cursor:"not-allowed"}}>
+                💬 Send via SMS
+              </div>
+            </div>
+
+            {/* Coming soon note */}
+            <div style={{padding:"10px 14px",background:B.graphite,borderTop:`1px solid ${B.smoke}`}}>
+              <div style={{fontSize:"0.7rem",color:B.mid,textAlign:"center",lineHeight:1.6}}>
+                ✦ AI combines quantities · removes duplicates · sorts by aisle
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* How it all works — two explainer cards */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:0}}>
+
+        {/* Calendar integration */}
+        <div style={{display:"flex",gap:18,background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:4,padding:"22px 24px"}}>
+          <div style={{fontSize:"1.6rem",flexShrink:0,marginTop:2}}>📲</div>
+          <div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.05rem",color:B.white,marginBottom:8}}>Phone Calendar Integration</div>
+            <div style={{fontSize:"0.82rem",color:B.silver,fontWeight:300,lineHeight:1.8}}>
+              Drop a recipe on a day and Gathered creates a calendar event with a deep link —&nbsp;
+              <span style={{color:B.gold,fontFamily:"monospace",fontSize:"0.78rem"}}>gathered://recipe/123</span>
+              &nbsp;— that opens the full recipe in-app. One tap from your reminder straight to the recipe.
+            </div>
+          </div>
+        </div>
+
+        {/* Grocery list integration */}
+        <div style={{display:"flex",gap:18,background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:4,padding:"22px 24px"}}>
+          <div style={{fontSize:"1.6rem",flexShrink:0,marginTop:2}}>🛒</div>
+          <div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.05rem",color:B.white,marginBottom:8}}>AI Grocery List</div>
+            <div style={{fontSize:"0.82rem",color:B.silver,fontWeight:300,lineHeight:1.8}}>
+              Gathered reads every recipe in your meal plan, combines duplicate ingredients, scales quantities, and groups everything by grocery store aisle. One tap sends the list to your phone's Reminders app or via SMS.
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
+
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
@@ -376,6 +485,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState(null);
   const [loginName, setLoginName] = useState("");
@@ -419,7 +529,10 @@ export default function App() {
 
         {/* Left panel */}
         <div style={{flex:1,padding:"80px 64px",display:"flex",flexDirection:"column",justifyContent:"center",borderRight:`1px solid ${B.graphite}`}}>
-          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"0.75rem",letterSpacing:"0.55em",textTransform:"uppercase",color:B.gold,marginBottom:32}}>Gathered</div>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
+            <SprigMark size={36} color={B.gold}/>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"0.85rem",letterSpacing:"0.45em",textTransform:"uppercase",color:B.gold}}>Gathered</div>
+          </div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"4rem",fontWeight:300,color:B.white,lineHeight:1.05,marginBottom:20}}>
             Every recipe<br/>worth keeping.
           </div>
@@ -444,7 +557,10 @@ export default function App() {
         {/* Right panel */}
         <div style={{width:440,padding:"80px 56px",display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div style={{width:"100%"}}>
-            <div style={{fontSize:"0.62rem",letterSpacing:"0.32em",textTransform:"uppercase",color:B.gold,marginBottom:14}}>Welcome to Gathered</div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <SprigMark size={20} color={B.gold}/>
+              <div style={{fontSize:"0.62rem",letterSpacing:"0.32em",textTransform:"uppercase",color:B.gold}}>Welcome to Gathered</div>
+            </div>
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2.6rem",fontWeight:300,color:B.white,marginBottom:10,lineHeight:1.1}}>Your kitchen,<br/>beautifully kept.</div>
             <div style={{fontSize:"0.82rem",color:B.mid,marginBottom:38,fontWeight:300}}>Sign in or create your collection.</div>
             <form onSubmit={handleLogin}>
@@ -480,61 +596,88 @@ export default function App() {
       <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:B.black}}>
 
         {/* Nav */}
-        <header style={{height:58,borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",padding:"0 28px",flexShrink:0,gap:32}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginRight:"auto"}}>
-            <span style={{color:B.gold,fontSize:"0.8rem"}}>✦</span>
-            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.15rem",letterSpacing:"0.06em",color:B.white}}>{APP_NAME}</span>
+        {/* NAV */}
+        <header style={{height:58,borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",padding:"0 24px",flexShrink:0,gap:16}}>
+          <button onClick={()=>setSidebarOpen(o=>!o)}
+            style={{background:"none",border:"none",cursor:"pointer",padding:"6px 8px",display:"flex",flexDirection:"column",gap:5,flexShrink:0}}
+            aria-label="Menu">
+            <span style={{display:"block",width:20,height:1.5,background:sidebarOpen?B.gold:B.silver,transition:"all 0.25s",transform:sidebarOpen?"rotate(45deg) translate(4px,4.5px)":"none"}}/>
+            <span style={{display:"block",width:20,height:1.5,background:sidebarOpen?B.gold:B.silver,transition:"all 0.25s",opacity:sidebarOpen?0:1}}/>
+            <span style={{display:"block",width:20,height:1.5,background:sidebarOpen?B.gold:B.silver,transition:"all 0.25s",transform:sidebarOpen?"rotate(-45deg) translate(4px,-4.5px)":"none"}}/>
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <SprigMark size={26} color={B.gold}/>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.1rem",letterSpacing:"0.06em",color:B.white}}>{APP_NAME}</span>
           </div>
-          <div style={{display:"flex",border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden"}}>
+          <div style={{display:"flex",border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginLeft:"auto"}}>
             {TABS.map(t=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 22px",background:tab===t?B.gold:"none",color:tab===t?B.black:B.silver,border:"none",fontSize:"0.73rem",letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:tab===t?600:400,transition:"all 0.15s"}}>{t}</button>
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 20px",background:tab===t?B.gold:"none",color:tab===t?B.black:B.silver,border:"none",fontSize:"0.72rem",letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:tab===t?600:400,transition:"all 0.15s"}}>{t}</button>
             ))}
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:12,marginLeft:"auto"}}>
-            <div style={{width:32,height:32,borderRadius:"50%",border:`1px solid ${B.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.7rem",color:B.gold,fontWeight:600,letterSpacing:"0.04em"}}>{user.avatar}</div>
-            <div style={{fontSize:"0.82rem",color:B.silver}}>{user.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginLeft:16}}>
+            <div style={{width:30,height:30,borderRadius:"50%",border:`1px solid ${B.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.68rem",color:B.gold,fontWeight:600}}>{user.avatar}</div>
+            <div style={{fontSize:"0.8rem",color:B.silver}}>{user.name}</div>
           </div>
         </header>
 
-        <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        <div style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
           {tab==="Collection" ? (
             <>
-              {/* Sidebar */}
-              <aside style={{width:215,borderRight:`1px solid ${B.graphite}`,padding:"26px 0",display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto"}}>
-                <div style={{padding:"0 18px 26px",borderBottom:`1px solid ${B.graphite}`,marginBottom:26}}>
-                  <div style={{fontSize:"0.58rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.mid,marginBottom:14}}>Categories</div>
+              {sidebarOpen && (
+                <div onClick={()=>setSidebarOpen(false)}
+                  style={{position:"fixed",inset:0,top:58,background:"rgba(0,0,0,0.6)",zIndex:40,backdropFilter:"blur(2px)"}}/>
+              )}
+              <aside style={{
+                position:"fixed",top:58,left:0,bottom:0,width:196,
+                background:B.charcoal,borderRight:`1px solid ${B.graphite}`,
+                display:"flex",flexDirection:"column",zIndex:50,
+                transform:sidebarOpen?"translateX(0)":"translateX(-100%)",
+                transition:"transform 0.28s cubic-bezier(0.4,0,0.2,1)",
+                overflowY:"auto",
+                boxShadow:sidebarOpen?"4px 0 28px rgba(0,0,0,0.5)":"none",
+              }}>
+                <div style={{padding:"16px 14px 12px",borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:28,height:28,borderRadius:"50%",border:`1px solid ${B.gold}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.65rem",color:B.gold,fontWeight:600,flexShrink:0}}>{user.avatar}</div>
+                  <div>
+                    <div style={{color:B.white,fontSize:"0.82rem",fontWeight:500}}>{user.name}</div>
+                    <div style={{color:B.mid,fontSize:"0.64rem",marginTop:1}}>{recipes.length} recipe{recipes.length!==1?"s":""}</div>
+                  </div>
+                </div>
+                <div style={{padding:"14px 12px 8px"}}>
+                  <div style={{fontSize:"0.56rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:8}}>Categories</div>
                   {CATEGORIES.map(c=>(
-                    <button key={c} onClick={()=>setCat(c)}
-                      style={{display:"block",width:"100%",textAlign:"left",padding:"8px 10px",background:"none",border:"none",fontSize:"0.84rem",color:cat===c?B.white:B.silver,cursor:"pointer",borderRadius:2,marginBottom:2,fontFamily:"'Jost',sans-serif",borderLeft:cat===c?`2px solid ${B.gold}`:"2px solid transparent",paddingLeft:cat===c?8:10,transition:"all 0.15s"}}>
+                    <button key={c} onClick={()=>{ setCat(c); setSidebarOpen(false); }}
+                      style={{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",background:cat===c?"rgba(201,168,76,0.08)":"none",border:"none",fontSize:"0.82rem",color:cat===c?B.gold:B.silver,cursor:"pointer",borderRadius:3,marginBottom:1,fontFamily:"'Jost',sans-serif",borderLeft:cat===c?`2px solid ${B.gold}`:"2px solid transparent",paddingLeft:cat===c?8:10,transition:"all 0.15s"}}>
                       {c}
                     </button>
                   ))}
                 </div>
-                <div style={{padding:"0 18px 26px",borderBottom:`1px solid ${B.graphite}`,marginBottom:26}}>
-                  <div style={{fontSize:"0.58rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.mid,marginBottom:14}}>Actions</div>
+                <div style={{height:1,background:B.graphite,margin:"6px 12px 12px"}}/>
+                <div style={{padding:"0 12px 12px"}}>
+                  <div style={{fontSize:"0.56rem",letterSpacing:"0.28em",textTransform:"uppercase",color:B.mid,marginBottom:8}}>Actions</div>
                   <input type="file" accept="image/*" ref={fileRef} style={{display:"none"}} onChange={handleUpload}/>
-                  <button onClick={()=>fileRef.current.click()} disabled={uploading}
-                    style={{width:"100%",padding:"10px 12px",background:B.gold,color:B.black,border:"none",borderRadius:2,fontSize:"0.75rem",fontWeight:600,letterSpacing:"0.1em",cursor:"pointer",marginBottom:8,display:"flex",alignItems:"center",gap:8,fontFamily:"'Jost',sans-serif"}}>
-                    {uploading ? <><span style={{display:"inline-block",width:12,height:12,border:`1.5px solid rgba(0,0,0,0.25)`,borderTopColor:B.black,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/> Scanning…</> : <>📷 Add from Photo</>}
+                  <button onClick={()=>{ fileRef.current.click(); setSidebarOpen(false); }} disabled={uploading}
+                    style={{width:"100%",padding:"9px 12px",background:B.gold,color:B.black,border:"none",borderRadius:3,fontSize:"0.74rem",fontWeight:600,letterSpacing:"0.08em",cursor:"pointer",marginBottom:7,display:"flex",alignItems:"center",gap:7,fontFamily:"'Jost',sans-serif"}}>
+                    {uploading?<><span style={{display:"inline-block",width:11,height:11,border:`1.5px solid rgba(0,0,0,0.25)`,borderTopColor:B.black,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>Scanning…</>:<>📷 Add from Photo</>}
                   </button>
-                  <button onClick={()=>setShareTarget({collection:true})} disabled={recipes.length===0}
-                    style={{width:"100%",padding:"10px 12px",background:"none",color:B.silver,border:`1px solid ${B.smoke}`,borderRadius:2,fontSize:"0.75rem",letterSpacing:"0.08em",cursor:"pointer",marginBottom:8,fontFamily:"'Jost',sans-serif"}}>
+                  <button onClick={()=>{ setShareTarget({collection:true}); setSidebarOpen(false); }} disabled={recipes.length===0}
+                    style={{width:"100%",padding:"9px 12px",background:"none",color:B.silver,border:`1px solid ${B.smoke}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",marginBottom:7,fontFamily:"'Jost',sans-serif"}}>
                     💬 Share Collection
                   </button>
-                  <button onClick={()=>{ const h=makeEbook(user,recipes); window.open(URL.createObjectURL(new Blob([h],{type:"text/html"})),"_blank"); }} disabled={recipes.length===0}
-                    style={{width:"100%",padding:"10px 12px",background:"none",color:B.gold,border:`1px solid ${B.goldD}`,borderRadius:2,fontSize:"0.75rem",letterSpacing:"0.08em",cursor:"pointer",fontFamily:"'Jost',sans-serif"}}>
+                  <button onClick={()=>{ const h=makeEbook(user,recipes); window.open(URL.createObjectURL(new Blob([h],{type:"text/html"})),"_blank"); setSidebarOpen(false); }} disabled={recipes.length===0}
+                    style={{width:"100%",padding:"9px 12px",background:"none",color:B.gold,border:`1px solid ${B.goldD}`,borderRadius:3,fontSize:"0.74rem",letterSpacing:"0.06em",cursor:"pointer",fontFamily:"'Jost',sans-serif"}}>
                     📚 Generate Ebook
                   </button>
                 </div>
-                <div style={{padding:"0 18px",display:"flex",alignItems:"center",justifyContent:"center",marginTop:"auto"}}>
+                <div style={{marginTop:"auto",padding:"12px 14px",borderTop:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <div style={{textAlign:"center",flex:1}}>
-                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",color:B.white,lineHeight:1}}>{recipes.length}</div>
-                    <div style={{fontSize:"0.58rem",letterSpacing:"0.15em",textTransform:"uppercase",color:B.mid,marginTop:4}}>Gathered</div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.7rem",color:B.white,lineHeight:1}}>{recipes.length}</div>
+                    <div style={{fontSize:"0.55rem",letterSpacing:"0.14em",textTransform:"uppercase",color:B.mid,marginTop:3}}>Gathered</div>
                   </div>
-                  <div style={{width:1,height:32,background:B.graphite,margin:"0 12px"}}/>
+                  <div style={{width:1,height:26,background:B.graphite,margin:"0 10px"}}/>
                   <div style={{textAlign:"center",flex:1}}>
-                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",color:B.white,lineHeight:1}}>{[...new Set(recipes.map(r=>r.category))].length}</div>
-                    <div style={{fontSize:"0.58rem",letterSpacing:"0.15em",textTransform:"uppercase",color:B.mid,marginTop:4}}>Categories</div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.7rem",color:B.white,lineHeight:1}}>{[...new Set(recipes.map(r=>r.category))].length}</div>
+                    <div style={{fontSize:"0.55rem",letterSpacing:"0.14em",textTransform:"uppercase",color:B.mid,marginTop:3}}>Categories</div>
                   </div>
                 </div>
               </aside>
@@ -556,7 +699,7 @@ export default function App() {
 
                 {filtered.length===0 ? (
                   <div style={{textAlign:"center",padding:"100px 20px"}}>
-                    <div style={{color:B.gold,fontSize:"1.5rem",marginBottom:18,opacity:0.3}}>✦</div>
+                    <div style={{marginBottom:18,opacity:0.3,display:"flex",justifyContent:"center"}}><SprigMark size={40} color={B.gold}/></div>
                     <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.7rem",color:B.silver,fontWeight:300,marginBottom:10}}>Nothing gathered yet</div>
                     <div style={{fontSize:"0.84rem",color:B.mid,fontWeight:300}}>Upload a recipe photo to begin your collection</div>
                   </div>
@@ -624,4 +767,5 @@ const CSS = `
   input, button { font-family:'Jost',sans-serif; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn { from { transform:translateX(-100%); } to { transform:translateX(0); } }
 `;

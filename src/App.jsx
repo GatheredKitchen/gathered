@@ -349,7 +349,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     if (!recipe) return null;
     setGenerating(true);
 
-    const W = 1080, H = 1920;
+    const W = 1080, H = 2400;
     const canvas = document.createElement("canvas");
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
@@ -439,18 +439,54 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     y += 55;
 
     ctx.fillStyle = "#D0D0D0";
-    ctx.font = "300 26px sans-serif";
+    ctx.font = "300 24px sans-serif";
     const maxIng = 12;
     const ingList = recipe.ingredients.slice(0, maxIng);
     ingList.forEach(ing => {
-      const lines = wrapText(ctx, "• " + ing, W - 200);
-      lines.forEach(l => { ctx.fillText(l, 100, y); y += 38; });
+      const lines = wrapText(ctx, "\u2022 " + ing, W - 200);
+      lines.forEach(l => { ctx.fillText(l, 100, y); y += 36; });
     });
     if (recipe.ingredients.length > maxIng) {
       ctx.fillStyle = "#999999";
-      ctx.font = "italic 300 22px sans-serif";
+      ctx.font = "italic 300 20px sans-serif";
       ctx.fillText(`+ ${recipe.ingredients.length - maxIng} more ingredients`, 100, y);
-      y += 40;
+      y += 38;
+    }
+
+    // INSTRUCTIONS section
+    y += 30;
+    ctx.fillStyle = "#C9A84C";
+    ctx.font = "400 20px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("INSTRUCTIONS", 100, y);
+    ctx.strokeStyle = "rgba(201,168,76,0.3)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(100, y + 15); ctx.lineTo(W - 100, y + 15); ctx.stroke();
+    y += 50;
+
+    ctx.fillStyle = "#D0D0D0";
+    ctx.font = "300 22px sans-serif";
+    const maxSteps = 8;
+    const stepList = recipe.instructions.slice(0, maxSteps);
+    stepList.forEach((step, i) => {
+      // Draw step number in gold
+      ctx.fillStyle = "#C9A84C";
+      ctx.font = "300 28px serif";
+      ctx.fillText(`${i + 1}.`, 100, y);
+      // Draw step text in light
+      ctx.fillStyle = "#D0D0D0";
+      ctx.font = "300 22px sans-serif";
+      const lines = wrapText(ctx, step, W - 240);
+      lines.forEach((l, li) => {
+        ctx.fillText(l, 150, y);
+        y += 32;
+      });
+      y += 8; // extra spacing between steps
+    });
+    if (recipe.instructions.length > maxSteps) {
+      ctx.fillStyle = "#999999";
+      ctx.font = "italic 300 20px sans-serif";
+      ctx.fillText(`+ ${recipe.instructions.length - maxSteps} more steps \u2014 full recipe at usegathered.app`, 100, y);
+      y += 38;
     }
 
     // Footer

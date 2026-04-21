@@ -334,36 +334,261 @@ function AuthScreen({ onAuth }) {
 // ─── SHARE MODAL ──────────────────────────────────────────────────────────────
 function ShareModal({ recipe, user, allRecipes, onClose }) {
   const [mode, setMode] = useState(recipe ? "single" : "collection");
+  const [shareFormat, setShareFormat] = useState("card"); // "card" or "text"
   const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const canvasRef = useRef(null);
+
   const text = mode==="single" ? fmtSMS(recipe, user.name) : fmtCollection(user, allRecipes);
   const copy = () => { navigator.clipboard.writeText(text).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2500); }); };
   const openSMS = () => window.location.href = `sms:?body=${encodeURIComponent(text)}`;
   const openEbook = () => { const h=makeEbook(user,allRecipes); window.open(URL.createObjectURL(new Blob([h],{type:"text/html"})),"_blank"); };
 
+  // Generate branded recipe card image using Canvas
+  const generateCardImage = async (downloadOnly=false) => {
+    if (!recipe) return null;
+    setGenerating(true);
+
+    const W = 1080, H = 1920;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    // Black background
+    ctx.fillStyle = "#0A0A0A";
+    ctx.fillRect(0, 0, W, H);
+
+    // Gold border
+    ctx.strokeStyle = "#C9A84C";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 40, W - 80, H - 80);
+    ctx.strokeStyle = "rgba(201,168,76,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(56, 56, W - 112, H - 112);
+
+    // Corner marks
+    const cm = 70, cl = 120;
+    ctx.strokeStyle = "#C9A84C";
+    ctx.lineWidth = 3;
+    for (const [x, y, dx, dy] of [[cm,cm,1,1],[W-cm,cm,-1,1],[cm,H-cm,1,-1],[W-cm,H-cm,-1,-1]]) {
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+dx*cl, y); ctx.moveTo(x,y); ctx.lineTo(x, y+dy*cl); ctx.stroke();
+    }
+
+    // Sprig at top center (simplified)
+    const sprigCx = W/2, sprigCy = 200;
+    ctx.strokeStyle = "#C9A84C"; ctx.fillStyle = "#C9A84C"; ctx.lineWidth = 5;
+    // Stem
+    ctx.beginPath(); ctx.moveTo(sprigCx, sprigCy+90); ctx.lineTo(sprigCx, sprigCy-40); ctx.stroke();
+    // Three grain ovals at top
+    for (const offset of [-30, 0, 30]) {
+      ctx.beginPath();
+      ctx.ellipse(sprigCx + offset, sprigCy - 55, 15, 22, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    // Branches (curves)
+    const drawBranch = (startY, length, side) => {
+      ctx.beginPath();
+      ctx.moveTo(sprigCx, startY);
+      ctx.quadraticCurveTo(sprigCx + side*length*0.5, startY - 10, sprigCx + side*length, startY + 25);
+      ctx.stroke();
+    };
+    drawBranch(sprigCy + 10, 45, -1);
+    drawBranch(sprigCy + 10, 45, 1);
+    drawBranch(sprigCy + 45, 60, -1);
+    drawBranch(sprigCy + 45, 60, 1);
+    drawBranch(sprigCy + 80, 75, -1);
+    drawBranch(sprigCy + 80, 75, 1);
+
+    // "FROM THE KITCHEN OF"
+    ctx.fillStyle = "#C9A84C";
+    ctx.font = "300 28px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("FROM THE KITCHEN OF", W/2, 380);
+
+    // User name (large script-style)
+    ctx.fillStyle = "#F5F5F0";
+    ctx.font = "300 68px serif";
+    ctx.fillText(user.name, W/2, 460);
+
+    // Gold rule
+    ctx.strokeStyle = "rgba(201,168,76,0.5)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W/2 - 120, 500); ctx.lineTo(W/2 + 120, 500); ctx.stroke();
+
+    // Recipe title (big)
+    ctx.fillStyle = "#F5F5F0";
+    ctx.font = "300 64px serif";
+    const titleLines = wrapText(ctx, recipe.title, W - 240);
+    let titleY = 600;
+    titleLines.forEach(line => { ctx.fillText(line, W/2, titleY); titleY += 80; });
+
+    // Meta info
+    ctx.fillStyle = "#999999";
+    ctx.font = "300 24px sans-serif";
+    const meta = [`Serves ${recipe.servings}`, recipe.prepTime ? `Prep ${recipe.prepTime}` : null, recipe.cookTime ? `Cook ${recipe.cookTime}` : null].filter(Boolean).join("  ·  ");
+    ctx.fillText(meta, W/2, titleY + 20);
+
+    let y = titleY + 90;
+
+    // INGREDIENTS section
+    ctx.fillStyle = "#C9A84C";
+    ctx.font = "400 20px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("INGREDIENTS", 100, y);
+    ctx.strokeStyle = "rgba(201,168,76,0.3)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(100, y + 15); ctx.lineTo(W - 100, y + 15); ctx.stroke();
+    y += 55;
+
+    ctx.fillStyle = "#D0D0D0";
+    ctx.font = "300 26px sans-serif";
+    const maxIng = 12;
+    const ingList = recipe.ingredients.slice(0, maxIng);
+    ingList.forEach(ing => {
+      const lines = wrapText(ctx, "• " + ing, W - 200);
+      lines.forEach(l => { ctx.fillText(l, 100, y); y += 38; });
+    });
+    if (recipe.ingredients.length > maxIng) {
+      ctx.fillStyle = "#999999";
+      ctx.font = "italic 300 22px sans-serif";
+      ctx.fillText(`+ ${recipe.ingredients.length - maxIng} more ingredients`, 100, y);
+      y += 40;
+    }
+
+    // Footer
+    ctx.fillStyle = "#C9A84C";
+    ctx.font = "300 22px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GATHERED", W/2, H - 160);
+    ctx.strokeStyle = "rgba(201,168,76,0.5)";
+    ctx.beginPath(); ctx.moveTo(W/2 - 80, H - 140); ctx.lineTo(W/2 + 80, H - 140); ctx.stroke();
+    ctx.fillStyle = "#999999";
+    ctx.font = "300 20px sans-serif";
+    ctx.fillText("usegathered.app  ·  @ByGathered", W/2, H - 105);
+    ctx.fillStyle = "#555555";
+    ctx.font = "italic 300 18px serif";
+    ctx.fillText("Every recipe worth keeping.", W/2, H - 75);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        if (downloadOnly) {
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${recipe.title.replace(/[^a-z0-9]/gi,"-").toLowerCase()}-gathered.png`;
+          a.click();
+        }
+        setGenerating(false);
+        resolve({ blob, url });
+      }, "image/png");
+    });
+  };
+
+  // Helper to wrap text on canvas
+  function wrapText(ctx, text, maxWidth) {
+    const words = text.split(" ");
+    const lines = [];
+    let current = "";
+    for (const word of words) {
+      const test = current ? current + " " + word : word;
+      if (ctx.measureText(test).width <= maxWidth) {
+        current = test;
+      } else {
+        if (current) lines.push(current);
+        current = word;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  const downloadCard = () => { generateCardImage(true); };
+
+  const shareCardNative = async () => {
+    try {
+      const result = await generateCardImage(false);
+      if (result && navigator.share && navigator.canShare) {
+        const file = new File([result.blob], `${recipe.title}-gathered.png`, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: recipe.title, text: `From the Kitchen of ${user.name} · via Gathered` });
+          return;
+        }
+      }
+      // Fallback: download
+      downloadCard();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={S.shareBox}>
+      <div style={{...S.shareBox, maxHeight:"90vh", overflowY:"auto"}}>
         <div style={S.modalTopBar}>
           <div style={S.modalHeading}>Share</div>
           <button style={S.xBtn} onClick={onClose}>✕</button>
         </div>
+
         {recipe && (
           <div style={{display:"flex",padding:"16px 24px 0",gap:8}}>
             {["single","collection"].map(m=>(
-              <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"9px 0",border:`1px solid ${mode===m?B.gold:B.smoke}`,background:mode===m?B.gold:"none",color:mode===m?B.black:B.silver,fontSize:"0.73rem",letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",borderRadius:2,fontFamily:"'Jost',sans-serif",fontWeight:mode===m?600:400}}>
+              <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"9px 0",border:`1px solid ${mode===m?B.gold:B.smoke}`,background:mode===m?B.gold:"none",color:mode===m?B.black:B.silver,fontSize:"0.72rem",letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",borderRadius:3,fontFamily:"'Jost',sans-serif",fontWeight:mode===m?600:400}}>
                 {m==="single" ? `${recipe.image} This Recipe` : `🗂 Full Collection (${allRecipes.length})`}
               </button>
             ))}
           </div>
         )}
-        <div style={{margin:"16px 24px 0",background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:3,overflow:"hidden"}}>
-          <div style={{padding:"8px 14px",fontSize:"0.6rem",letterSpacing:"0.25em",textTransform:"uppercase",color:B.mid,borderBottom:`1px solid ${B.smoke}`}}>Text / SMS Preview</div>
-          <pre style={{padding:"14px",fontSize:"0.75rem",color:B.fog,fontFamily:"'Courier New',monospace",whiteSpace:"pre-wrap",maxHeight:210,overflowY:"auto",lineHeight:1.6}}>{text}</pre>
-        </div>
-        <div style={{display:"flex",gap:10,padding:"16px 24px"}}>
-          <button style={S.goldBtn} onClick={openSMS}>💬 Open in Messages</button>
-          <button style={{...S.outlineBtn,...(copied?{background:B.smoke,color:B.white,borderColor:B.smoke}:{})}} onClick={copy}>{copied?"✓ Copied":"📋 Copy Text"}</button>
-        </div>
+
+        {/* Format toggle — Card vs Text (only for single recipe) */}
+        {mode === "single" && recipe && (
+          <div style={{display:"flex", gap:8, padding:"14px 24px 0"}}>
+            <button onClick={()=>setShareFormat("card")} style={{flex:1, padding:"10px 0", border:`1px solid ${shareFormat==="card"?B.gold:B.smoke}`, background:shareFormat==="card"?"rgba(201,168,76,0.1)":"none", color:shareFormat==="card"?B.gold:B.silver, fontSize:"0.72rem", letterSpacing:"0.1em", cursor:"pointer", borderRadius:3, fontFamily:"'Jost',sans-serif", fontWeight:shareFormat==="card"?600:400}}>
+              🌾 Branded Card
+            </button>
+            <button onClick={()=>setShareFormat("text")} style={{flex:1, padding:"10px 0", border:`1px solid ${shareFormat==="text"?B.gold:B.smoke}`, background:shareFormat==="text"?"rgba(201,168,76,0.1)":"none", color:shareFormat==="text"?B.gold:B.silver, fontSize:"0.72rem", letterSpacing:"0.1em", cursor:"pointer", borderRadius:3, fontFamily:"'Jost',sans-serif", fontWeight:shareFormat==="text"?600:400}}>
+              💬 Text Message
+            </button>
+          </div>
+        )}
+
+        {/* CARD MODE — Branded image share */}
+        {mode === "single" && shareFormat === "card" && recipe && (
+          <div style={{padding:"18px 24px"}}>
+            <div style={{background:B.graphite, border:`1px solid ${B.smoke}`, borderRadius:4, padding:"22px 20px", textAlign:"center"}}>
+              <div style={{fontSize:"0.62rem", letterSpacing:"0.2em", textTransform:"uppercase", color:B.gold, marginBottom:10}}>Preview</div>
+              <div style={{fontFamily:"'Cormorant Garamond',serif", color:B.white, fontSize:"1.3rem", fontWeight:300, marginBottom:4}}>From the Kitchen of {user.name}</div>
+              <div style={{width:60, height:1, background:B.gold, margin:"10px auto", opacity:0.5}}/>
+              <div style={{fontFamily:"'Cormorant Garamond',serif", color:B.gold, fontSize:"1.6rem", fontWeight:300, marginBottom:12}}>{recipe.title}</div>
+              <div style={{fontSize:"0.7rem", color:B.silver, marginBottom:6}}>Serves {recipe.servings} · {recipe.ingredients.length} ingredients</div>
+              <div style={{fontSize:"0.65rem", color:B.mid, fontStyle:"italic"}}>Beautifully branded card with Gathered mark · perfect for sharing</div>
+            </div>
+
+            <div style={{display:"flex", gap:10, marginTop:16}}>
+              <button style={S.goldBtn} onClick={shareCardNative} disabled={generating}>
+                {generating ? "Generating..." : "📲 Share Card"}
+              </button>
+              <button style={S.outlineBtn} onClick={downloadCard} disabled={generating}>
+                {generating ? "..." : "⬇ Download"}
+              </button>
+            </div>
+            <div style={{fontSize:"0.68rem", color:B.mid, textAlign:"center", marginTop:10, fontStyle:"italic"}}>
+              Shares a beautiful image people can save · spreads Gathered with every share
+            </div>
+          </div>
+        )}
+
+        {/* TEXT MODE — original SMS text share */}
+        {(mode === "collection" || shareFormat === "text") && (
+          <>
+            <div style={{margin:"16px 24px 0",background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:3,overflow:"hidden"}}>
+              <div style={{padding:"8px 14px",fontSize:"0.6rem",letterSpacing:"0.25em",textTransform:"uppercase",color:B.mid,borderBottom:`1px solid ${B.smoke}`}}>Text / SMS Preview</div>
+              <pre style={{padding:"14px",fontSize:"0.75rem",color:B.fog,fontFamily:"'Courier New',monospace",whiteSpace:"pre-wrap",maxHeight:210,overflowY:"auto",lineHeight:1.6}}>{text}</pre>
+            </div>
+            <div style={{display:"flex",gap:10,padding:"16px 24px"}}>
+              <button style={S.goldBtn} onClick={openSMS}>💬 Open in Messages</button>
+              <button style={{...S.outlineBtn,...(copied?{background:B.smoke,color:B.white,borderColor:B.smoke}:{})}} onClick={copy}>{copied?"✓ Copied":"📋 Copy Text"}</button>
+            </div>
+          </>
+        )}
+
         {mode==="collection" && (
           <div style={{borderTop:`1px solid ${B.smoke}`,padding:"12px 24px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <span style={{fontSize:"0.78rem",color:B.silver}}>Want a polished, printable version?</span>
@@ -376,36 +601,68 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
 }
 
 // ─── RECIPE MODAL ─────────────────────────────────────────────────────────────
-function RecipeModal({ recipe, onClose, onShare }) {
+function RecipeModal({ recipe, onClose, onShare, onEdit, onDelete, onPhotoUpload, servingMultiplier, setServingMultiplier, scaleIngredient, uploadingPhoto }) {
+  const photoInputRef = useRef(null);
+  const scaledServings = Math.round(recipe.servings * servingMultiplier * 10) / 10;
+
   return (
     <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div style={S.recipeModal}>
-        <div style={{background:B.graphite,padding:"28px 34px",display:"flex",alignItems:"flex-start",gap:20,borderBottom:`1px solid ${B.smoke}`,flexShrink:0}}>
-          <div style={{fontSize:"3rem",flexShrink:0}}>{recipe.image}</div>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.8rem",fontWeight:300,color:B.white,lineHeight:1.15,marginBottom:10}}>{recipe.title}</div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:8}}>
-              {[`Prep ${recipe.prepTime}`,`Cook ${recipe.cookTime}`,`Serves ${recipe.servings}`].map(m=>(
-                <span key={m} style={{fontSize:"0.73rem",color:B.silver,border:`1px solid ${B.smoke}`,padding:"4px 12px",borderRadius:2}}>{m}</span>
-              ))}
+        {recipe.photo_url && (
+          <div style={{width:"100%", height:220, background:`url(${recipe.photo_url}) center/cover`, position:"relative", borderBottom:`1px solid ${B.smoke}`}}>
+            <div style={{position:"absolute", inset:0, background:"linear-gradient(to bottom, transparent 40%, rgba(17,17,17,0.7) 100%)"}} />
+          </div>
+        )}
+
+        <div style={{background:B.graphite,padding:"24px 28px 20px",display:"flex",alignItems:"flex-start",gap:16,borderBottom:`1px solid ${B.smoke}`,flexWrap:"wrap"}}>
+          <div style={{fontSize:"2.6rem",flexShrink:0}}>{recipe.image}</div>
+          <div style={{flex:1, minWidth:200}}>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.7rem",fontWeight:300,color:B.white,lineHeight:1.1,marginBottom:10}}>{recipe.title}</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+              {recipe.prepTime && <span style={{fontSize:"0.7rem",color:B.silver,border:`1px solid ${B.smoke}`,padding:"4px 10px",borderRadius:2}}>Prep {recipe.prepTime}</span>}
+              {recipe.cookTime && <span style={{fontSize:"0.7rem",color:B.silver,border:`1px solid ${B.smoke}`,padding:"4px 10px",borderRadius:2}}>Cook {recipe.cookTime}</span>}
+              <span style={{fontSize:"0.7rem",color:B.silver,border:`1px solid ${B.smoke}`,padding:"4px 10px",borderRadius:2}}>Serves {scaledServings}</span>
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {recipe.tags?.map(t=><span key={t} style={{fontSize:"0.65rem",color:B.mid,letterSpacing:"0.08em"}}>#{t}</span>)}
+              {recipe.tags?.map(t=><span key={t} style={{fontSize:"0.62rem",color:B.mid,letterSpacing:"0.08em"}}>#{t}</span>)}
             </div>
           </div>
-          <div style={{display:"flex",gap:10,flexShrink:0}}>
+          <div style={{display:"flex",gap:6,flexShrink:0,flexWrap:"wrap"}}>
             <button style={S.goldBtnSm} onClick={()=>onShare(recipe)}>Share</button>
+            <button onClick={()=>onEdit(recipe)} style={{...S.goldBtnSm, background:"none", color:B.gold, border:`1px solid ${B.gold}`}}>Edit</button>
+            <button onClick={()=>onDelete(recipe)} style={{...S.goldBtnSm, background:"none", color:"#C66", border:`1px solid #7A1515`}}>🗑</button>
             <button style={S.xBtn} onClick={onClose}>✕</button>
           </div>
         </div>
-        <div style={{padding:"26px 34px 36px",overflowY:"auto"}}>
+
+        {!recipe.photo_url && (
+          <div style={{padding:"14px 28px", background:B.charcoal, borderBottom:`1px solid ${B.smoke}`, textAlign:"center"}}>
+            <input type="file" accept="image/*" ref={photoInputRef} style={{display:"none"}} onChange={(e)=>{ if(e.target.files[0]) onPhotoUpload(recipe.id, e.target.files[0]); e.target.value=""; }} />
+            <button onClick={()=>photoInputRef.current?.click()} disabled={uploadingPhoto} style={{padding:"8px 20px", background:"none", color:B.gold, border:`1px dashed ${B.goldBd}`, borderRadius:3, fontSize:"0.74rem", cursor:"pointer", fontFamily:"'Jost',sans-serif", letterSpacing:"0.08em"}}>
+              {uploadingPhoto ? "Uploading..." : "📸 Add Finished Dish Photo"}
+            </button>
+          </div>
+        )}
+
+        <div style={{padding:"20px 28px 32px",overflowY:"auto"}}>
+          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22, paddingBottom:16, borderBottom:`1px solid ${B.graphite}`, gap:10, flexWrap:"wrap"}}>
+            <div style={{fontSize:"0.66rem", letterSpacing:"0.14em", textTransform:"uppercase", color:B.gold}}>Scale Recipe</div>
+            <div style={{display:"flex", gap:4, background:B.charcoal, borderRadius:4, padding:3}}>
+              {[0.5, 1, 2, 3].map(m => (
+                <button key={m} onClick={()=>setServingMultiplier(m)} style={{padding:"6px 14px", background:servingMultiplier===m?B.gold:"transparent", color:servingMultiplier===m?B.black:B.silver, border:"none", borderRadius:3, fontSize:"0.72rem", fontWeight:servingMultiplier===m?600:400, cursor:"pointer", fontFamily:"'Jost',sans-serif", transition:"all 0.15s"}}>
+                  {m === 0.5 ? "½×" : `${m}×`}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{marginBottom:24}}>
             <div style={S.secLabel}>Ingredients</div>
             <ul style={{listStyle:"none"}}>
               {recipe.ingredients.map((ing,i)=>(
-                <li key={i} style={{padding:"9px 0",borderBottom:`1px solid ${B.graphite}`,fontSize:"0.9rem",color:B.fog,display:"flex",alignItems:"center",gap:12,fontWeight:300}}>
-                  <span style={{width:4,height:4,borderRadius:"50%",background:B.gold,flexShrink:0,display:"inline-block"}}/>
-                  {ing}
+                <li key={i} style={{padding:"9px 0",borderBottom:`1px solid ${B.graphite}`,fontSize:"0.9rem",color:B.fog,display:"flex",gap:14,alignItems:"center"}}>
+                  <span style={{width:4,height:4,borderRadius:"50%",background:B.gold,flexShrink:0,display:"inline-block"}}></span>
+                  {scaleIngredient(ing, servingMultiplier)}
                 </li>
               ))}
             </ul>
@@ -414,18 +671,158 @@ function RecipeModal({ recipe, onClose, onShare }) {
             <div style={S.secLabel}>Instructions</div>
             <ol style={{listStyle:"none"}}>
               {recipe.instructions.map((step,i)=>(
-                <li key={i} style={{display:"flex",gap:18,padding:"12px 0",borderBottom:`1px solid ${B.graphite}`,fontSize:"0.9rem",color:B.fog,fontWeight:300,lineHeight:1.65}}>
-                  <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.3rem",color:B.gold,minWidth:22,lineHeight:1,flexShrink:0}}>{i+1}</span>
+                <li key={i} style={{display:"flex",gap:18,padding:"12px 0",borderBottom:`1px solid ${B.graphite}`,fontSize:"0.92rem",color:B.fog,lineHeight:1.7}}>
+                  <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.3rem",color:B.gold,minWidth:22,lineHeight:1}}>{i+1}</span>
                   <span>{step}</span>
                 </li>
               ))}
             </ol>
           </div>
           {recipe.notes && (
-            <div style={{borderLeft:`2px solid ${B.gold}`,padding:"12px 18px",fontSize:"0.88rem",color:B.silver,fontStyle:"italic",fontWeight:300}}>
+            <div style={{borderLeft:`2px solid ${B.gold}`,padding:"12px 18px",fontSize:"0.88rem",color:B.silver,fontStyle:"italic",background:"rgba(201,168,76,0.04)"}}>
               {recipe.notes}
             </div>
           )}
+
+          {recipe.photo_url && (
+            <div style={{marginTop:22, textAlign:"center"}}>
+              <input type="file" accept="image/*" ref={photoInputRef} style={{display:"none"}} onChange={(e)=>{ if(e.target.files[0]) onPhotoUpload(recipe.id, e.target.files[0]); e.target.value=""; }} />
+              <button onClick={()=>photoInputRef.current?.click()} disabled={uploadingPhoto} style={{padding:"8px 20px", background:"none", color:B.mid, border:`1px solid ${B.graphite}`, borderRadius:3, fontSize:"0.72rem", cursor:"pointer", fontFamily:"'Jost',sans-serif"}}>
+                {uploadingPhoto ? "Uploading..." : "Replace Photo"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT RECIPE MODAL ────────────────────────────────────────────────────────
+function EditRecipeModal({ recipe, onClose, onSave }) {
+  const [form, setForm] = useState({
+    title: recipe.title || "",
+    category: recipe.category || "Dinner",
+    tags: (recipe.tags || []).join(", "),
+    servings: recipe.servings || 4,
+    prepTime: recipe.prepTime || recipe.prep_time || "",
+    cookTime: recipe.cookTime || recipe.cook_time || "",
+    image: recipe.image || "🍽️",
+    ingredients: (recipe.ingredients || []).join("\n"),
+    instructions: (recipe.instructions || []).join("\n"),
+    notes: recipe.notes || "",
+  });
+
+  const handleSave = () => {
+    const updates = {
+      title: form.title.trim(),
+      category: form.category,
+      tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
+      servings: parseInt(form.servings) || 4,
+      prepTime: form.prepTime,
+      cookTime: form.cookTime,
+      image: form.image || "🍽️",
+      ingredients: form.ingredients.split("\n").map(s => s.trim()).filter(Boolean),
+      instructions: form.instructions.split("\n").map(s => s.trim()).filter(Boolean),
+      notes: form.notes,
+    };
+    onSave(recipe.id, updates);
+  };
+
+  const inputStyle = {
+    width:"100%", padding:"10px 12px", background:B.charcoal, color:B.fog,
+    border:`1px solid ${B.smoke}`, borderRadius:3, fontSize:"0.86rem",
+    fontFamily:"'Jost',sans-serif", boxSizing:"border-box", outline:"none"
+  };
+  const labelStyle = {
+    display:"block", fontSize:"0.64rem", letterSpacing:"0.14em",
+    textTransform:"uppercase", color:B.gold, marginBottom:6, fontWeight:500
+  };
+
+  return (
+    <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{...S.shareBox, maxWidth:600, maxHeight:"90vh", overflowY:"auto"}}>
+        <div style={{padding:"20px 28px", borderBottom:`1px solid ${B.smoke}`, display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, background:B.graphite, zIndex:1}}>
+          <div style={{color:B.white, fontFamily:"'Cormorant Garamond',serif", fontSize:"1.4rem", fontWeight:300}}>Edit Recipe</div>
+          <button onClick={onClose} style={{background:"none", border:"none", color:B.silver, fontSize:"1.4rem", cursor:"pointer"}}>×</button>
+        </div>
+        <div style={{padding:"24px 28px"}}>
+          <div style={{marginBottom:14}}>
+            <label style={labelStyle}>Title</label>
+            <input style={inputStyle} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} />
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:14}}>
+            <div>
+              <label style={labelStyle}>Emoji</label>
+              <input style={inputStyle} value={form.image} onChange={e=>setForm({...form,image:e.target.value})} maxLength={2} />
+            </div>
+            <div>
+              <label style={labelStyle}>Category</label>
+              <select style={inputStyle} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
+                {CATEGORIES.filter(c=>c!=="All").map(c=><option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Servings</label>
+              <input style={inputStyle} type="number" value={form.servings} onChange={e=>setForm({...form,servings:e.target.value})} />
+            </div>
+          </div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14}}>
+            <div>
+              <label style={labelStyle}>Prep Time</label>
+              <input style={inputStyle} value={form.prepTime} onChange={e=>setForm({...form,prepTime:e.target.value})} placeholder="15 minutes" />
+            </div>
+            <div>
+              <label style={labelStyle}>Cook Time</label>
+              <input style={inputStyle} value={form.cookTime} onChange={e=>setForm({...form,cookTime:e.target.value})} placeholder="30 minutes" />
+            </div>
+          </div>
+          <div style={{marginBottom:14}}>
+            <label style={labelStyle}>Tags (comma separated)</label>
+            <input style={inputStyle} value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="cookies, bars, family favorite" />
+          </div>
+          <div style={{marginBottom:14}}>
+            <label style={labelStyle}>Ingredients (one per line)</label>
+            <textarea style={{...inputStyle, minHeight:140, resize:"vertical", fontFamily:"'Jost',sans-serif"}} value={form.ingredients} onChange={e=>setForm({...form,ingredients:e.target.value})} />
+          </div>
+          <div style={{marginBottom:14}}>
+            <label style={labelStyle}>Instructions (one step per line)</label>
+            <textarea style={{...inputStyle, minHeight:140, resize:"vertical", fontFamily:"'Jost',sans-serif"}} value={form.instructions} onChange={e=>setForm({...form,instructions:e.target.value})} />
+          </div>
+          <div style={{marginBottom:18}}>
+            <label style={labelStyle}>Notes</label>
+            <textarea style={{...inputStyle, minHeight:70, resize:"vertical", fontFamily:"'Jost',sans-serif"}} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Any special notes..." />
+          </div>
+          <div style={{display:"flex", gap:10}}>
+            <button onClick={onClose} style={{flex:1, padding:"12px", background:"none", color:B.silver, border:`1px solid ${B.smoke}`, borderRadius:3, fontSize:"0.8rem", letterSpacing:"0.08em", cursor:"pointer", fontFamily:"'Jost',sans-serif"}}>Cancel</button>
+            <button onClick={handleSave} style={{flex:1, padding:"12px", background:B.gold, color:B.black, border:"none", borderRadius:3, fontSize:"0.8rem", fontWeight:600, letterSpacing:"0.08em", cursor:"pointer", fontFamily:"'Jost',sans-serif"}}>Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DELETE CONFIRMATION MODAL ────────────────────────────────────────────────
+function DeleteRecipeModal({ recipe, onClose, onConfirm }) {
+  return (
+    <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{...S.shareBox, maxWidth:420}}>
+        <div style={{padding:"32px 28px 20px", textAlign:"center"}}>
+          <div style={{fontSize:"2.5rem", marginBottom:12}}>🗑️</div>
+          <div style={{color:B.white, fontFamily:"'Cormorant Garamond',serif", fontSize:"1.6rem", fontWeight:300, marginBottom:10}}>
+            Delete Recipe?
+          </div>
+          <div style={{color:B.silver, fontSize:"0.88rem", lineHeight:1.5, marginBottom:6}}>
+            This will permanently remove <strong style={{color:B.white}}>{recipe.title}</strong> from your collection.
+          </div>
+          <div style={{color:B.mid, fontSize:"0.76rem", fontStyle:"italic"}}>
+            This action cannot be undone.
+          </div>
+        </div>
+        <div style={{padding:"0 28px 28px", display:"flex", gap:10}}>
+          <button onClick={onClose} style={{flex:1, padding:"12px", background:"none", color:B.silver, border:`1px solid ${B.smoke}`, borderRadius:3, fontSize:"0.8rem", letterSpacing:"0.08em", cursor:"pointer", fontFamily:"'Jost',sans-serif"}}>Cancel</button>
+          <button onClick={()=>onConfirm(recipe)} style={{flex:1, padding:"12px", background:"#7A1515", color:B.white, border:"none", borderRadius:3, fontSize:"0.8rem", fontWeight:600, letterSpacing:"0.08em", cursor:"pointer", fontFamily:"'Jost',sans-serif"}}>Delete</button>
         </div>
       </div>
     </div>
@@ -638,6 +1035,10 @@ export default function App() {
   const [subscription, setSubscription] = useState({ tier: "free", status: "free" });
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [recipes, setRecipes] = useState([]);
+  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [deletingRecipe, setDeletingRecipe] = useState(null);
+  const [servingMultiplier, setServingMultiplier] = useState(1);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
   const [tab, setTab] = useState("Collection");
@@ -789,11 +1190,110 @@ export default function App() {
     setSidebarOpen(false);
   };
 
+  const handleDeleteRecipe = async (recipe) => {
+    const { error } = await supabase.from("recipes").delete().eq("id", recipe.id);
+    if (!error) {
+      setRecipes(prev => prev.filter(r => r.id !== recipe.id));
+      setDeletingRecipe(null);
+      setSelected(null);
+      showToast("Recipe deleted");
+    } else {
+      showToast("Couldn\'t delete recipe. Try again.", "err");
+    }
+  };
+
+  const handleUpdateRecipe = async (recipeId, updates) => {
+    // Convert camelCase to snake_case for Supabase columns
+    const dbUpdates = {
+      title: updates.title,
+      category: updates.category,
+      tags: updates.tags,
+      servings: updates.servings,
+      prep_time: updates.prepTime,
+      cook_time: updates.cookTime,
+      image: updates.image,
+      ingredients: updates.ingredients,
+      instructions: updates.instructions,
+      notes: updates.notes,
+    };
+    const { data, error } = await supabase.from("recipes").update(dbUpdates).eq("id", recipeId).select();
+    if (!error && data) {
+      setRecipes(prev => prev.map(r => r.id === recipeId ? { ...data[0], prepTime: data[0].prep_time, cookTime: data[0].cook_time } : r));
+      setEditingRecipe(null);
+      if (selected && selected.id === recipeId) {
+        setSelected({ ...data[0], prepTime: data[0].prep_time, cookTime: data[0].cook_time });
+      }
+      showToast("Recipe updated");
+    } else {
+      showToast("Couldn\'t update recipe. Try again.", "err");
+    }
+  };
+
+  const handlePhotoUpload = async (recipeId, file) => {
+    if (!file || !user) return;
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${user.id}/${recipeId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("recipe-photos").upload(fileName, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("recipe-photos").getPublicUrl(fileName);
+      const photoUrl = urlData.publicUrl;
+      const { error: updErr } = await supabase.from("recipes").update({ photo_url: photoUrl }).eq("id", recipeId);
+      if (updErr) throw updErr;
+      setRecipes(prev => prev.map(r => r.id === recipeId ? { ...r, photo_url: photoUrl } : r));
+      if (selected && selected.id === recipeId) {
+        setSelected(prev => ({ ...prev, photo_url: photoUrl }));
+      }
+      showToast("Photo added");
+    } catch (err) {
+      console.error(err);
+      showToast("Couldn\'t upload photo. Try again.", "err");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Scale ingredient amounts for serving size toggle
+  const scaleIngredient = (ingredient, multiplier) => {
+    if (multiplier === 1 || !ingredient) return ingredient;
+    // Match leading number, fraction, or mixed number (e.g. "2", "1/2", "1 1/2", "2.5")
+    return ingredient.replace(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/, (match) => {
+      let value;
+      if (match.includes(" ")) {
+        // Mixed number like "1 1/2"
+        const [whole, frac] = match.split(" ");
+        const [num, den] = frac.split("/");
+        value = parseInt(whole) + parseInt(num) / parseInt(den);
+      } else if (match.includes("/")) {
+        const [num, den] = match.split("/");
+        value = parseInt(num) / parseInt(den);
+      } else {
+        value = parseFloat(match);
+      }
+      const scaled = value * multiplier;
+      // Format nicely — use fractions for common values
+      if (scaled === Math.floor(scaled)) return String(scaled);
+      // Check for common fractions
+      const rounded = Math.round(scaled * 100) / 100;
+      const whole = Math.floor(rounded);
+      const decimal = rounded - whole;
+      const fractions = { 0.25: "1/4", 0.33: "1/3", 0.5: "1/2", 0.67: "2/3", 0.75: "3/4" };
+      for (const [dec, frac] of Object.entries(fractions)) {
+        if (Math.abs(decimal - parseFloat(dec)) < 0.05) {
+          return whole > 0 ? `${whole} ${frac}` : frac;
+        }
+      }
+      return rounded.toString();
+    });
+  };
+
   // ── Normalize recipe fields ────────────────────────────────────────────────
   const normalize = (r) => ({
     ...r,
     prepTime: r.prepTime || r.prep_time || "",
     cookTime: r.cookTime || r.cook_time || "",
+    photo_url: r.photo_url || null,
   });
 
   const filtered = recipes.map(normalize).filter(r => {
@@ -837,7 +1337,7 @@ export default function App() {
           </div>
           <div style={{display:"flex",border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginLeft:"auto"}}>
             {TABS.map(t=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 20px",background:tab===t?B.gold:"none",color:tab===t?B.black:B.silver,border:"none",fontSize:"0.72rem",letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:tab===t?600:400,transition:"all 0.15s"}}>{t}</button>
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"7px 14px",background:tab===t?B.gold:"none",color:tab===t?B.black:B.silver,border:"none",fontSize:"0.7rem",letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:tab===t?600:400,transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0}}>{t}</button>
             ))}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginLeft:16}}>
@@ -958,8 +1458,9 @@ export default function App() {
                         onMouseEnter={e=>{ e.currentTarget.style.borderColor=B.gold; e.currentTarget.style.transform="translateY(-2px)"; }}
                         onMouseLeave={e=>{ e.currentTarget.style.borderColor=B.smoke; e.currentTarget.style.transform="none"; }}
                         style={{background:B.charcoal,border:`1px solid ${B.smoke}`,borderRadius:4,overflow:"hidden",cursor:"pointer",transition:"all 0.2s"}}>
-                        <div style={{background:B.graphite,padding:"22px 18px",position:"relative",minHeight:92,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <span style={{fontSize:"2.6rem"}}>{r.image}</span>
+                        <div style={{background: r.photo_url ? `url(${r.photo_url}) center/cover` : B.graphite, padding:"22px 18px", position:"relative", minHeight: r.photo_url ? 140 : 92, display:"flex", alignItems:"center", justifyContent:"center"}}>
+                          {!r.photo_url && <span style={{fontSize:"2.6rem"}}>{r.image}</span>}
+                          {r.photo_url && <div style={{position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(17,17,17,0.6) 100%)"}}/>}
                           <div style={{position:"absolute",top:10,right:10,fontSize:"0.58rem",letterSpacing:"0.18em",textTransform:"uppercase",color:B.gold,border:`1px solid ${B.goldD}`,padding:"3px 8px",borderRadius:2}}>{r.category}</div>
                         </div>
                         <div style={{padding:"14px 16px"}}>
@@ -983,7 +1484,20 @@ export default function App() {
         </div>
       </div>
 
-      {selected && <RecipeModal recipe={selected} onClose={()=>setSelected(null)} onShare={r=>{ setShareTarget({recipe:r}); setSelected(null); }}/>}
+      {selected && <RecipeModal
+        recipe={selected}
+        onClose={()=>{setSelected(null); setServingMultiplier(1);}}
+        onShare={r=>{ setShareTarget({recipe:r}); setSelected(null); }}
+        onEdit={r=>{ setEditingRecipe(r); setSelected(null); }}
+        onDelete={r=>setDeletingRecipe(r)}
+        onPhotoUpload={handlePhotoUpload}
+        servingMultiplier={servingMultiplier}
+        setServingMultiplier={setServingMultiplier}
+        scaleIngredient={scaleIngredient}
+        uploadingPhoto={uploadingPhoto}
+      />}
+      {editingRecipe && <EditRecipeModal recipe={editingRecipe} onClose={()=>setEditingRecipe(null)} onSave={handleUpdateRecipe}/>}
+      {deletingRecipe && <DeleteRecipeModal recipe={deletingRecipe} onClose={()=>setDeletingRecipe(null)} onConfirm={handleDeleteRecipe}/>}
       {shareTarget && <ShareModal recipe={shareTarget.recipe||null} user={user} allRecipes={recipes.map(normalize)} onClose={()=>setShareTarget(null)}/>}
       {toast && (
         <div style={{position:"fixed",bottom:24,right:24,background:toast.type==="err"?"#7A1515":B.gold,color:toast.type==="err"?B.white:B.black,padding:"12px 22px",borderRadius:3,fontSize:"0.8rem",fontWeight:600,letterSpacing:"0.08em",boxShadow:"0 8px 32px rgba(0,0,0,0.5)",zIndex:999,animation:"fadeUp 0.3s ease"}}>

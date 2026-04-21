@@ -374,51 +374,41 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+dx*cl, y); ctx.moveTo(x,y); ctx.lineTo(x, y+dy*cl); ctx.stroke();
     }
 
-    // Sprig at top center (simplified)
-    const sprigCx = W/2, sprigCy = 200;
-    ctx.strokeStyle = "#C9A84C"; ctx.fillStyle = "#C9A84C"; ctx.lineWidth = 5;
-    // Stem
-    ctx.beginPath(); ctx.moveTo(sprigCx, sprigCy+90); ctx.lineTo(sprigCx, sprigCy-40); ctx.stroke();
-    // Three grain ovals at top
-    for (const offset of [-30, 0, 30]) {
-      ctx.beginPath();
-      ctx.ellipse(sprigCx + offset, sprigCy - 55, 15, 22, 0, 0, Math.PI*2);
-      ctx.fill();
+    // Official sprig image (loads from /sprig.png hosted in repo)
+    const sprigImg = new Image();
+    sprigImg.crossOrigin = "anonymous";
+    await new Promise((resolve) => {
+      sprigImg.onload = resolve;
+      sprigImg.onerror = resolve; // Continue even if sprig fails to load
+      sprigImg.src = "/sprig.png";
+    });
+    if (sprigImg.complete && sprigImg.naturalHeight > 0) {
+      // Draw the official sprig centered at top
+      const sprigH = 280;
+      const sprigW = (sprigImg.width / sprigImg.height) * sprigH;
+      ctx.drawImage(sprigImg, W/2 - sprigW/2, 130, sprigW, sprigH);
     }
-    // Branches (curves)
-    const drawBranch = (startY, length, side) => {
-      ctx.beginPath();
-      ctx.moveTo(sprigCx, startY);
-      ctx.quadraticCurveTo(sprigCx + side*length*0.5, startY - 10, sprigCx + side*length, startY + 25);
-      ctx.stroke();
-    };
-    drawBranch(sprigCy + 10, 45, -1);
-    drawBranch(sprigCy + 10, 45, 1);
-    drawBranch(sprigCy + 45, 60, -1);
-    drawBranch(sprigCy + 45, 60, 1);
-    drawBranch(sprigCy + 80, 75, -1);
-    drawBranch(sprigCy + 80, 75, 1);
 
     // "FROM THE KITCHEN OF"
     ctx.fillStyle = "#C9A84C";
     ctx.font = "300 28px serif";
     ctx.textAlign = "center";
-    ctx.fillText("FROM THE KITCHEN OF", W/2, 380);
+    ctx.fillText("FROM THE KITCHEN OF", W/2, 460);
 
     // User name (large script-style)
     ctx.fillStyle = "#F5F5F0";
     ctx.font = "300 68px serif";
-    ctx.fillText(user.name, W/2, 460);
+    ctx.fillText(user.name, W/2, 540);
 
     // Gold rule
     ctx.strokeStyle = "rgba(201,168,76,0.5)"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W/2 - 120, 500); ctx.lineTo(W/2 + 120, 500); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W/2 - 120, 580); ctx.lineTo(W/2 + 120, 580); ctx.stroke();
 
     // Recipe title (big)
     ctx.fillStyle = "#F5F5F0";
     ctx.font = "300 64px serif";
     const titleLines = wrapText(ctx, recipe.title, W - 240);
-    let titleY = 600;
+    let titleY = 680;
     titleLines.forEach(line => { ctx.fillText(line, W/2, titleY); titleY += 80; });
 
     // Meta info

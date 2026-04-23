@@ -300,9 +300,9 @@ function AuthScreen({ onAuth }) {
 
             <div style={{marginTop:24,fontSize:"0.72rem",color:B.mid,textAlign:"center",fontWeight:300,lineHeight:1.7}}>
               By creating an account you agree to our{" "}
-              <span style={{color:B.gold,cursor:"pointer"}}>Terms of Service</span>
+              <a href="/terms.html" style={{color:B.gold,textDecoration:"none"}} target="_blank">Terms of Service</a>
               {" "}and{" "}
-              <span style={{color:B.gold,cursor:"pointer"}}>Privacy Policy</span>
+              <a href="/privacy.html" style={{color:B.gold,textDecoration:"none"}} target="_blank">Privacy Policy</a>
             </div>
           </div>
         </div>

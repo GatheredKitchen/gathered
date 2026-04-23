@@ -749,7 +749,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
 }
 
 // ─── RECIPE MODAL ─────────────────────────────────────────────────────────────
-function RecipeModal({ recipe, onClose, onShare, onEdit, onDelete, onPhotoUpload, servingMultiplier, setServingMultiplier, scaleIngredient, uploadingPhoto }) {
+function RecipeModal({ recipe, onClose, onShare, onEdit, onDelete, onPhotoUpload, servingMultiplier, setServingMultiplier, scaleIngredient, uploadingPhoto, justScanned, onDismissScanNotice }) {
   const photoInputRef = useRef(null);
   const scaledServings = Math.round(recipe.servings * servingMultiplier * 10) / 10;
 
@@ -782,6 +782,16 @@ function RecipeModal({ recipe, onClose, onShare, onEdit, onDelete, onPhotoUpload
             <button style={S.xBtn} onClick={onClose}>✕</button>
           </div>
         </div>
+
+        {justScanned && (
+          <div style={{padding:"14px 22px", background:"rgba(201,168,76,0.08)", borderBottom:`1px solid rgba(201,168,76,0.2)`, display:"flex", alignItems:"flex-start", gap:12}}>
+            <div style={{fontSize:"1.1rem", flexShrink:0}}>✨</div>
+            <div style={{flex:1, fontSize:"0.82rem", color:B.goldL, fontWeight:300, lineHeight:1.5}}>
+              <strong style={{color:B.gold, fontWeight:600}}>Recipe scanned!</strong> Please review ingredients and instructions for accuracy. AI may misread handwriting, measurements, or ingredient names. Tap <strong style={{color:B.gold}}>Edit</strong> to fix anything that looks off.
+            </div>
+            <button onClick={onDismissScanNotice} style={{background:"none", border:"none", color:B.mid, fontSize:"1.2rem", cursor:"pointer", padding:"0 4px", flexShrink:0, lineHeight:1}}>×</button>
+          </div>
+        )}
 
         {!recipe.photo_url && (
           <div style={{padding:"14px 28px", background:B.charcoal, borderBottom:`1px solid ${B.smoke}`, textAlign:"center"}}>
@@ -840,6 +850,11 @@ function RecipeModal({ recipe, onClose, onShare, onEdit, onDelete, onPhotoUpload
               </button>
             </div>
           )}
+
+          {/* Persistent accuracy reminder */}
+          <div style={{marginTop:28, paddingTop:18, borderTop:`1px solid ${B.graphite}`, fontSize:"0.68rem", color:B.mid, textAlign:"center", lineHeight:1.6, fontStyle:"italic"}}>
+            Always review recipes for accuracy before cooking. Check for allergens and dietary restrictions.
+          </div>
         </div>
       </div>
     </div>
@@ -1187,6 +1202,7 @@ export default function App() {
   const [deletingRecipe, setDeletingRecipe] = useState(null);
   const [servingMultiplier, setServingMultiplier] = useState(1);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [justScanned, setJustScanned] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
   const [tab, setTab] = useState("Collection");
@@ -1307,10 +1323,12 @@ export default function App() {
     };
     const { data, error } = await supabase.from("recipes").insert([recipe]).select();
     if (!error && data) {
-      setRecipes(prev => [{ ...data[0], prepTime: data[0].prep_time, cookTime: data[0].cook_time }, ...prev]);
-      showToast("Recipe added to your Gathered collection");
+      const savedRecipe = { ...data[0], prepTime: data[0].prep_time, cookTime: data[0].cook_time };
+      setRecipes(prev => [savedRecipe, ...prev]);
+      return savedRecipe;
     } else {
       showToast("Failed to save recipe. Please try again.", "err");
+      return null;
     }
   };
 
@@ -1321,7 +1339,13 @@ export default function App() {
     try {
       const parsed = await parseFromImages(files);
       if (!parsed.title) throw new Error("No recipe found");
-      await saveRecipe(parsed);
+      const savedRecipe = await saveRecipe(parsed);
+      // Show the recipe modal so user can review & edit before using
+      if (savedRecipe) {
+        setSelected(normalize(savedRecipe));
+        setJustScanned(true);
+      }
+      showToast("Recipe scanned — please review for accuracy before using.");
     } catch (err) {
       const msg = err.message?.includes("No recipe")
         ? "No recipe found in those photos. Try clearer images."
@@ -1635,15 +1659,17 @@ export default function App() {
 
       {selected && <RecipeModal
         recipe={selected}
-        onClose={()=>{setSelected(null); setServingMultiplier(1);}}
-        onShare={r=>{ setShareTarget({recipe:r}); setSelected(null); }}
-        onEdit={r=>{ setEditingRecipe(r); setSelected(null); }}
+        onClose={()=>{setSelected(null); setServingMultiplier(1); setJustScanned(false);}}
+        onShare={r=>{ setShareTarget({recipe:r}); setSelected(null); setJustScanned(false); }}
+        onEdit={r=>{ setEditingRecipe(r); setSelected(null); setJustScanned(false); }}
         onDelete={r=>setDeletingRecipe(r)}
         onPhotoUpload={handlePhotoUpload}
         servingMultiplier={servingMultiplier}
         setServingMultiplier={setServingMultiplier}
         scaleIngredient={scaleIngredient}
         uploadingPhoto={uploadingPhoto}
+        justScanned={justScanned}
+        onDismissScanNotice={()=>setJustScanned(false)}
       />}
       {editingRecipe && <EditRecipeModal recipe={editingRecipe} onClose={()=>setEditingRecipe(null)} onSave={handleUpdateRecipe}/>}
       {deletingRecipe && <DeleteRecipeModal recipe={deletingRecipe} onClose={()=>setDeletingRecipe(null)} onConfirm={handleDeleteRecipe}/>}

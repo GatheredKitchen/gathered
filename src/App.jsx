@@ -159,17 +159,16 @@ const parseFromImages = async (files) => {
 
 // ─── SPRIG MARK ───────────────────────────────────────────────────────────────
 function SprigMark({ size=32, color="#C9A84C" }) {
+  // Uses the official sprig image (hosted at /sprig.png)
+  // `size` = display width; height scales via aspect ratio (~2.07)
   return (
-    <svg width={size} height={Math.round(size*1.4)} viewBox="0 0 48 67" fill="none">
-      <line x1="24" y1="65" x2="24" y2="8" stroke={color} strokeWidth="2"/>
-      <path d="M24 52 Q6 42 4 28" stroke={color} strokeWidth="2" fill="none"/>
-      <path d="M24 38 Q4 28 2 14" stroke={color} strokeWidth="2" fill="none"/>
-      <path d="M24 52 Q42 42 44 28" stroke={color} strokeWidth="2" fill="none"/>
-      <path d="M24 38 Q44 28 46 14" stroke={color} strokeWidth="2" fill="none"/>
-      <ellipse cx="24" cy="8" rx="6" ry="9" fill={color}/>
-      <ellipse cx="15" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(-22 15 13)"/>
-      <ellipse cx="33" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(22 33 13)"/>
-    </svg>
+    <img 
+      src="/sprig.png" 
+      alt="Gathered" 
+      width={size} 
+      height={Math.round(size * 2.07)}
+      style={{ display:"inline-block", objectFit:"contain", flexShrink:0 }}
+    />
   );
 }
 
@@ -353,7 +352,7 @@ function AuthScreen({ onAuth }) {
         {/* Left panel */}
         <div style={{flex:1,padding:"80px 64px",display:"flex",flexDirection:"column",justifyContent:"center",borderRight:`1px solid ${B.graphite}`}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
-            <SprigMark size={36} color={B.gold}/>
+            <SprigMark size={22} color={B.gold}/>
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"0.85rem",letterSpacing:"0.45em",textTransform:"uppercase",color:B.gold}}>Gathered</div>
           </div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"4rem",fontWeight:300,color:B.white,lineHeight:1.05,marginBottom:20}}>
@@ -1481,7 +1480,7 @@ export default function App() {
             <span style={{display:"block",width:20,height:1.5,background:sidebarOpen?B.gold:B.silver,transition:"all 0.25s",transform:sidebarOpen?"rotate(-45deg) translate(4px,-4.5px)":"none"}}/>
           </button>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <SprigMark size={26} color={B.gold}/>
+            <SprigMark size={18} color={B.gold}/>
             <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.1rem",letterSpacing:"0.06em",color:B.white}}>{APP_NAME}</span>
           </div>
           <div style={{display:"flex",border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginLeft:"auto"}}>

@@ -1455,7 +1455,7 @@ export default function App() {
   if (loadingAuth) return (
     <>
       <style>{CSS}</style>
-      <div style={{minHeight:"100vh",background:B.black,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:20}}>
+      <div style={{minHeight:"100vh",background:B.black,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:20,paddingTop:"env(safe-area-inset-top,0px)",paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
         <SprigMark size={48} color={B.gold}/>
         <div style={{fontSize:"0.7rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.mid}}>Loading Gathered…</div>
       </div>
@@ -1469,10 +1469,10 @@ export default function App() {
   return (
     <>
       <style>{CSS}</style>
-      <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:B.black}}>
+      <div style={{minHeight:"100vh",minHeight:"100dvh",display:"flex",flexDirection:"column",background:B.black}}>
 
         {/* NAV */}
-        <header style={{height:58,borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",padding:"0 24px",flexShrink:0,gap:16}}>
+        <header style={{minHeight:58,borderBottom:`1px solid ${B.graphite}`,display:"flex",alignItems:"center",padding:"max(env(safe-area-inset-top,0px), 12px) 24px 12px",paddingLeft:"max(env(safe-area-inset-left,0px), 24px)",paddingRight:"max(env(safe-area-inset-right,0px), 24px)",flexShrink:0,gap:16}}>
           <button onClick={()=>setSidebarOpen(o=>!o)}
             style={{background:"none",border:"none",cursor:"pointer",padding:"6px 8px",display:"flex",flexDirection:"column",gap:5,flexShrink:0}}
             aria-label="Menu">
@@ -1503,13 +1503,14 @@ export default function App() {
                   style={{position:"fixed",inset:0,top:58,background:"rgba(0,0,0,0.6)",zIndex:40,backdropFilter:"blur(2px)"}}/>
               )}
               <aside style={{
-                position:"fixed",top:58,left:0,bottom:0,width:196,
+                position:"fixed",top:"calc(58px + env(safe-area-inset-top,0px))",left:0,bottom:0,width:196,
                 background:B.charcoal,borderRight:`1px solid ${B.graphite}`,
                 display:"flex",flexDirection:"column",zIndex:50,
                 transform:sidebarOpen?"translateX(0)":"translateX(-100%)",
                 transition:"transform 0.28s cubic-bezier(0.4,0,0.2,1)",
                 overflowY:"auto",
                 boxShadow:sidebarOpen?"4px 0 28px rgba(0,0,0,0.5)":"none",
+                paddingBottom:"env(safe-area-inset-bottom,0px)",
               }}>
                 <div style={{padding:"16px 14px 12px",borderBottom:`1px solid ${B.graphite}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>

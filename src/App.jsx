@@ -134,11 +134,13 @@ ${rs.map(r=>`
 
 // ─── AI PARSE ─────────────────────────────────────────────────────────────────
 const parseFromImages = async (files) => {
+  // Convert files to base64
   const images = await Promise.all(files.map(async (file) => {
     const b64 = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); });
     return { b64, mime: file.type };
   }));
 
+  // Call our secure Vercel serverless function — no CORS, no exposed keys
   const res = await fetch("/api/scan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -154,15 +156,39 @@ const parseFromImages = async (files) => {
   return data.recipe;
 };
 
+
+// ─── SPRIG MARK ───────────────────────────────────────────────────────────────
+function SprigMark({ size=32, color="#C9A84C" }) {
+  return (
+    <svg width={size} height={Math.round(size*1.4)} viewBox="0 0 48 67" fill="none">
+      <line x1="24" y1="65" x2="24" y2="8" stroke={color} strokeWidth="2"/>
+      <path d="M24 52 Q6 42 4 28" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 38 Q4 28 2 14" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 52 Q42 42 44 28" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M24 38 Q44 28 46 14" stroke={color} strokeWidth="2" fill="none"/>
+      <ellipse cx="24" cy="8" rx="6" ry="9" fill={color}/>
+      <ellipse cx="15" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(-22 15 13)"/>
+      <ellipse cx="33" cy="13" rx="5" ry="7" fill={color} opacity="0.8" transform="rotate(22 33 13)"/>
+    </svg>
+  );
+}
+
 // ─── AUTH SCREEN ──────────────────────────────────────────────────────────────
 function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState("login"); // login | signup | reset
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 900 : false);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 900);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -195,6 +221,131 @@ function AuthScreen({ onAuth }) {
     } finally { setLoading(false); }
   };
 
+  // ────────────────────────────────────────────────────────────────
+  // MOBILE LAYOUT
+  // ────────────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <>
+        <style>{CSS}</style>
+        <div style={{minHeight:"100vh",background:B.black,display:"flex",flexDirection:"column",paddingTop:"env(safe-area-inset-top,20px)",paddingBottom:"env(safe-area-inset-bottom,20px)"}}>
+          {/* Hero header */}
+          <div style={{padding:"40px 28px 24px",textAlign:"center"}}>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
+              <SprigMark size={52} color={B.gold}/>
+            </div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"0.78rem",letterSpacing:"0.45em",textTransform:"uppercase",color:B.gold,marginBottom:22}}>Gathered</div>
+            <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2.4rem",fontWeight:300,color:B.white,lineHeight:1.1,marginBottom:14}}>
+              Every recipe<br/>worth keeping.
+            </div>
+            <div style={{width:36,height:1,background:B.gold,margin:"0 auto 18px"}}/>
+            <div style={{fontSize:"0.88rem",color:B.silver,fontWeight:300,lineHeight:1.7,padding:"0 12px"}}>
+              Scan, save, and share the recipes that matter.
+            </div>
+          </div>
+
+          {/* Form card */}
+          <div style={{flex:1,padding:"0 24px 32px"}}>
+            <div style={{background:B.charcoal,border:`1px solid ${B.graphite}`,borderRadius:6,padding:"28px 22px"}}>
+              {/* Mode toggle */}
+              <div style={{display:"flex",gap:0,border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginBottom:26}}>
+                {["login","signup"].map(m=>(
+                  <button key={m} type="button" onClick={()=>{ setMode(m); setError(""); setSuccess(""); }}
+                    style={{flex:1,padding:"11px 0",background:mode===m?B.gold:"none",color:mode===m?B.black:B.silver,border:"none",fontSize:"0.72rem",letterSpacing:"0.14em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:mode===m?600:400,transition:"all 0.15s"}}>
+                    {m==="login"?"Sign In":"Sign Up"}
+                  </button>
+                ))}
+              </div>
+
+              {mode==="reset" ? (
+                <>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.5rem",fontWeight:300,color:B.white,marginBottom:6}}>Reset Password</div>
+                  <div style={{fontSize:"0.8rem",color:B.mid,marginBottom:22,fontWeight:300,lineHeight:1.5}}>Enter your email and we'll send a reset link.</div>
+                </>
+              ) : (
+                <>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.6rem",fontWeight:300,color:B.white,marginBottom:6,lineHeight:1.15}}>
+                    {mode==="login"?"Welcome back.":"Join Gathered."}
+                  </div>
+                  <div style={{fontSize:"0.8rem",color:B.mid,marginBottom:22,fontWeight:300}}>
+                    {mode==="login"?"Sign in to your collection.":"Create your free account."}
+                  </div>
+                </>
+              )}
+
+              {error && (
+                <div style={{background:"rgba(139,26,26,0.15)",border:"1px solid rgba(139,26,26,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.8rem",color:"#E88080",marginBottom:16}}>{error}</div>
+              )}
+              {success && (
+                <div style={{background:"rgba(107,124,92,0.15)",border:"1px solid rgba(107,124,92,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.8rem",color:"#A8C49A",marginBottom:16}}>{success}</div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                {mode==="signup" && (
+                  <>
+                    <label style={LS.lbl}>Your Name</label>
+                    <input style={LS.inp} placeholder="Your name" value={name} onChange={e=>setName(e.target.value)} autoFocus autoComplete="name"/>
+                  </>
+                )}
+                <label style={LS.lbl}>Email Address</label>
+                <input style={LS.inp} type="email" placeholder="hello@example.com" value={email} onChange={e=>setEmail(e.target.value)} autoFocus={mode!=="signup"} autoComplete="email" inputMode="email"/>
+                {mode!=="reset" && (
+                  <>
+                    <label style={LS.lbl}>Password</label>
+                    <input style={LS.inp} type="password" placeholder={mode==="signup"?"Create a strong password":"Your password"} value={password} onChange={e=>setPassword(e.target.value)} autoComplete={mode==="signup"?"new-password":"current-password"}/>
+                  </>
+                )}
+                <button style={{...LS.btn, opacity:loading?0.7:1}} type="submit" disabled={loading}>
+                  {loading ? "Please wait…" : mode==="login" ? "Enter My Collection →" : mode==="signup" ? "Create My Account →" : "Send Reset Link →"}
+                </button>
+              </form>
+
+              {mode==="login" && (
+                <button type="button" onClick={()=>{ setMode("reset"); setError(""); setSuccess(""); }}
+                  style={{background:"none",border:"none",color:B.mid,fontSize:"0.78rem",cursor:"pointer",marginTop:14,fontFamily:"'Jost',sans-serif",display:"block",width:"100%",textAlign:"center",padding:"8px"}}>
+                  Forgot your password?
+                </button>
+              )}
+              {mode==="reset" && (
+                <button type="button" onClick={()=>{ setMode("login"); setError(""); setSuccess(""); }}
+                  style={{background:"none",border:"none",color:B.mid,fontSize:"0.78rem",cursor:"pointer",marginTop:14,fontFamily:"'Jost',sans-serif",display:"block",width:"100%",textAlign:"center",padding:"8px"}}>
+                  ← Back to sign in
+                </button>
+              )}
+            </div>
+
+            {/* Feature list below form */}
+            <div style={{marginTop:32,padding:"0 6px"}}>
+              <div style={{fontSize:"0.62rem",letterSpacing:"0.2em",textTransform:"uppercase",color:B.gold,textAlign:"center",marginBottom:16,fontWeight:500}}>What you'll get</div>
+              <div style={{display:"flex",flexDirection:"column",gap:11}}>
+                {[
+                  "AI recipe scanning from any photo",
+                  "Personalized ebook you can print or share",
+                  "SMS sharing in one tap",
+                  "Meal planning calendar — coming soon",
+                ].map(f=>(
+                  <div key={f} style={{display:"flex",alignItems:"center",gap:12,fontSize:"0.82rem",color:B.fog,fontWeight:300}}>
+                    <span style={{color:B.gold,fontSize:"0.6rem"}}>✦</span>{f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{marginTop:28,fontSize:"0.68rem",color:B.mid,textAlign:"center",fontWeight:300,lineHeight:1.7,padding:"0 12px"}}>
+              By creating an account you agree to our{" "}
+              <a href="/terms.html" target="_blank" style={{color:B.gold,textDecoration:"none"}}>Terms of Use</a>
+              {" "}and{" "}
+              <a href="/privacy.html" target="_blank" style={{color:B.gold,textDecoration:"none"}}>Privacy Policy</a>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // DESKTOP LAYOUT
+  // ────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{CSS}</style>
@@ -202,7 +353,7 @@ function AuthScreen({ onAuth }) {
         {/* Left panel */}
         <div style={{flex:1,padding:"80px 64px",display:"flex",flexDirection:"column",justifyContent:"center",borderRight:`1px solid ${B.graphite}`}}>
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
-            <img src="/sprig.png" style={{height:36,width:"auto"}} alt="Gathered"/>
+            <SprigMark size={36} color={B.gold}/>
             <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"0.85rem",letterSpacing:"0.45em",textTransform:"uppercase",color:B.gold}}>Gathered</div>
           </div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"4rem",fontWeight:300,color:B.white,lineHeight:1.05,marginBottom:20}}>
@@ -231,7 +382,7 @@ function AuthScreen({ onAuth }) {
           <div style={{width:"100%"}}>
             <div style={{display:"flex",gap:0,border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginBottom:36}}>
               {["login","signup"].map(m=>(
-                <button key={m} onClick={()=>{ setMode(m); setError(""); setSuccess(""); }}
+                <button key={m} type="button" onClick={()=>{ setMode(m); setError(""); setSuccess(""); }}
                   style={{flex:1,padding:"10px 0",background:mode===m?B.gold:"none",color:mode===m?B.black:B.silver,border:"none",fontSize:"0.75rem",letterSpacing:"0.14em",textTransform:"uppercase",cursor:"pointer",fontFamily:"'Jost',sans-serif",fontWeight:mode===m?600:400,transition:"all 0.15s"}}>
                   {m==="login"?"Sign In":"Create Account"}
                 </button>
@@ -254,16 +405,8 @@ function AuthScreen({ onAuth }) {
               </>
             )}
 
-            {error && (
-              <div style={{background:"rgba(139,26,26,0.15)",border:"1px solid rgba(139,26,26,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.82rem",color:"#E88080",marginBottom:18}}>
-                {error}
-              </div>
-            )}
-            {success && (
-              <div style={{background:"rgba(107,124,92,0.15)",border:"1px solid rgba(107,124,92,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.82rem",color:"#A8C49A",marginBottom:18}}>
-                {success}
-              </div>
-            )}
+            {error && (<div style={{background:"rgba(139,26,26,0.15)",border:"1px solid rgba(139,26,26,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.82rem",color:"#E88080",marginBottom:18}}>{error}</div>)}
+            {success && (<div style={{background:"rgba(107,124,92,0.15)",border:"1px solid rgba(107,124,92,0.4)",borderRadius:3,padding:"10px 14px",fontSize:"0.82rem",color:"#A8C49A",marginBottom:18}}>{success}</div>)}
 
             <form onSubmit={handleSubmit}>
               {mode==="signup" && (
@@ -286,13 +429,13 @@ function AuthScreen({ onAuth }) {
             </form>
 
             {mode==="login" && (
-              <button onClick={()=>{ setMode("reset"); setError(""); setSuccess(""); }}
+              <button type="button" onClick={()=>{ setMode("reset"); setError(""); setSuccess(""); }}
                 style={{background:"none",border:"none",color:B.mid,fontSize:"0.78rem",cursor:"pointer",marginTop:16,fontFamily:"'Jost',sans-serif",display:"block",width:"100%",textAlign:"center"}}>
                 Forgot your password?
               </button>
             )}
             {mode==="reset" && (
-              <button onClick={()=>{ setMode("login"); setError(""); setSuccess(""); }}
+              <button type="button" onClick={()=>{ setMode("login"); setError(""); setSuccess(""); }}
                 style={{background:"none",border:"none",color:B.mid,fontSize:"0.78rem",cursor:"pointer",marginTop:16,fontFamily:"'Jost',sans-serif",display:"block",width:"100%",textAlign:"center"}}>
                 ← Back to sign in
               </button>
@@ -300,9 +443,9 @@ function AuthScreen({ onAuth }) {
 
             <div style={{marginTop:24,fontSize:"0.72rem",color:B.mid,textAlign:"center",fontWeight:300,lineHeight:1.7}}>
               By creating an account you agree to our{" "}
-              <a href="/terms.html" style={{color:B.gold,textDecoration:"none"}} target="_blank">Terms of Service</a>
+              <a href="/terms.html" target="_blank" style={{color:B.gold,textDecoration:"none"}}>Terms of Use</a>
               {" "}and{" "}
-              <a href="/privacy.html" style={{color:B.gold,textDecoration:"none"}} target="_blank">Privacy Policy</a>
+              <a href="/privacy.html" target="_blank" style={{color:B.gold,textDecoration:"none"}}>Privacy Policy</a>
             </div>
           </div>
         </div>
@@ -314,7 +457,7 @@ function AuthScreen({ onAuth }) {
 // ─── SHARE MODAL ──────────────────────────────────────────────────────────────
 function ShareModal({ recipe, user, allRecipes, onClose }) {
   const [mode, setMode] = useState(recipe ? "single" : "collection");
-  const [shareFormat, setShareFormat] = useState("card");
+  const [shareFormat, setShareFormat] = useState("card"); // "card" or "text"
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
   const canvasRef = useRef(null);
@@ -324,6 +467,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
   const openSMS = () => window.location.href = `sms:?body=${encodeURIComponent(text)}`;
   const openEbook = () => { const h=makeEbook(user,allRecipes); window.open(URL.createObjectURL(new Blob([h],{type:"text/html"})),"_blank"); };
 
+  // Generate branded recipe card image using Canvas
   const generateCardImage = async (downloadOnly=false) => {
     if (!recipe) return null;
     setGenerating(true);
@@ -333,9 +477,11 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d");
 
+    // Black background
     ctx.fillStyle = "#0A0A0A";
     ctx.fillRect(0, 0, W, H);
 
+    // Gold border
     ctx.strokeStyle = "#C9A84C";
     ctx.lineWidth = 2;
     ctx.strokeRect(40, 40, W - 80, H - 80);
@@ -343,6 +489,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     ctx.lineWidth = 1;
     ctx.strokeRect(56, 56, W - 112, H - 112);
 
+    // Corner marks
     const cm = 70, cl = 120;
     ctx.strokeStyle = "#C9A84C";
     ctx.lineWidth = 3;
@@ -350,37 +497,44 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
       ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+dx*cl, y); ctx.moveTo(x,y); ctx.lineTo(x, y+dy*cl); ctx.stroke();
     }
 
+    // Official sprig image (loads from /sprig.png hosted in repo)
     const sprigImg = new Image();
     sprigImg.crossOrigin = "anonymous";
     await new Promise((resolve) => {
       sprigImg.onload = resolve;
-      sprigImg.onerror = resolve;
+      sprigImg.onerror = resolve; // Continue even if sprig fails to load
       sprigImg.src = "/sprig.png";
     });
     if (sprigImg.complete && sprigImg.naturalHeight > 0) {
+      // Draw the official sprig centered at top
       const sprigH = 280;
       const sprigW = (sprigImg.width / sprigImg.height) * sprigH;
       ctx.drawImage(sprigImg, W/2 - sprigW/2, 130, sprigW, sprigH);
     }
 
+    // "FROM THE KITCHEN OF"
     ctx.fillStyle = "#C9A84C";
     ctx.font = "300 28px serif";
     ctx.textAlign = "center";
     ctx.fillText("FROM THE KITCHEN OF", W/2, 460);
 
+    // User name (large script-style)
     ctx.fillStyle = "#F5F5F0";
     ctx.font = "300 68px serif";
     ctx.fillText(user.name, W/2, 540);
 
+    // Gold rule
     ctx.strokeStyle = "rgba(201,168,76,0.5)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(W/2 - 120, 580); ctx.lineTo(W/2 + 120, 580); ctx.stroke();
 
+    // Recipe title (big)
     ctx.fillStyle = "#F5F5F0";
     ctx.font = "300 64px serif";
     const titleLines = wrapText(ctx, recipe.title, W - 240);
     let titleY = 680;
     titleLines.forEach(line => { ctx.fillText(line, W/2, titleY); titleY += 80; });
 
+    // Meta info
     ctx.fillStyle = "#999999";
     ctx.font = "300 24px sans-serif";
     const meta = [`Serves ${recipe.servings}`, recipe.prepTime ? `Prep ${recipe.prepTime}` : null, recipe.cookTime ? `Cook ${recipe.cookTime}` : null].filter(Boolean).join("  ·  ");
@@ -388,6 +542,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
 
     let y = titleY + 90;
 
+    // INGREDIENTS section
     ctx.fillStyle = "#C9A84C";
     ctx.font = "400 20px sans-serif";
     ctx.textAlign = "left";
@@ -411,6 +566,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
       y += 38;
     }
 
+    // INSTRUCTIONS section
     y += 30;
     ctx.fillStyle = "#C9A84C";
     ctx.font = "400 20px sans-serif";
@@ -425,17 +581,19 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     const maxSteps = 8;
     const stepList = recipe.instructions.slice(0, maxSteps);
     stepList.forEach((step, i) => {
+      // Draw step number in gold
       ctx.fillStyle = "#C9A84C";
       ctx.font = "300 28px serif";
       ctx.fillText(`${i + 1}.`, 100, y);
+      // Draw step text in light
       ctx.fillStyle = "#D0D0D0";
       ctx.font = "300 22px sans-serif";
       const lines = wrapText(ctx, step, W - 240);
-      lines.forEach((l) => {
+      lines.forEach((l, li) => {
         ctx.fillText(l, 150, y);
         y += 32;
       });
-      y += 8;
+      y += 8; // extra spacing between steps
     });
     if (recipe.instructions.length > maxSteps) {
       ctx.fillStyle = "#999999";
@@ -444,6 +602,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
       y += 38;
     }
 
+    // Footer
     ctx.fillStyle = "#C9A84C";
     ctx.font = "300 22px sans-serif";
     ctx.textAlign = "center";
@@ -472,6 +631,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
     });
   };
 
+  // Helper to wrap text on canvas
   function wrapText(ctx, text, maxWidth) {
     const words = text.split(" ");
     const lines = [];
@@ -501,6 +661,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
           return;
         }
       }
+      // Fallback: download
       downloadCard();
     } catch (err) {
       console.error(err);
@@ -525,6 +686,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
           </div>
         )}
 
+        {/* Format toggle — Card vs Text (only for single recipe) */}
         {mode === "single" && recipe && (
           <div style={{display:"flex", gap:8, padding:"14px 24px 0"}}>
             <button onClick={()=>setShareFormat("card")} style={{flex:1, padding:"10px 0", border:`1px solid ${shareFormat==="card"?B.gold:B.smoke}`, background:shareFormat==="card"?"rgba(201,168,76,0.1)":"none", color:shareFormat==="card"?B.gold:B.silver, fontSize:"0.72rem", letterSpacing:"0.1em", cursor:"pointer", borderRadius:3, fontFamily:"'Jost',sans-serif", fontWeight:shareFormat==="card"?600:400}}>
@@ -536,6 +698,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
           </div>
         )}
 
+        {/* CARD MODE — Branded image share */}
         {mode === "single" && shareFormat === "card" && recipe && (
           <div style={{padding:"18px 24px"}}>
             <div style={{background:B.graphite, border:`1px solid ${B.smoke}`, borderRadius:4, padding:"22px 20px", textAlign:"center"}}>
@@ -561,6 +724,7 @@ function ShareModal({ recipe, user, allRecipes, onClose }) {
           </div>
         )}
 
+        {/* TEXT MODE — original SMS text share */}
         {(mode === "collection" || shareFormat === "text") && (
           <>
             <div style={{margin:"16px 24px 0",background:B.graphite,border:`1px solid ${B.smoke}`,borderRadius:3,overflow:"hidden"}}>
@@ -821,7 +985,7 @@ function UpgradeModal({ onClose, onUpgrade, recipeCount }) {
       <div style={{...S.shareBox,maxWidth:440}}>
         <div style={{padding:"36px 32px 28px",textAlign:"center",borderBottom:`1px solid ${B.smoke}`}}>
           <div style={{display:"flex",justifyContent:"center",marginBottom:18}}>
-            <img src="/sprig.png" style={{height:44,width:"auto"}} alt="Gathered"/>
+            <SprigMark size={44} color={B.gold}/>
           </div>
           <div style={{fontSize:"0.6rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.gold,marginBottom:10}}>Gathered Pro</div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"2rem",fontWeight:300,color:B.white,lineHeight:1.15,marginBottom:12}}>
@@ -1038,6 +1202,7 @@ export default function App() {
 
   const showToast = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200); };
 
+  // ── Auth listener ──────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -1102,6 +1267,7 @@ export default function App() {
     }
   };
 
+  // Check for upgrade success in URL after Stripe redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("upgraded") === "true") {
@@ -1114,6 +1280,7 @@ export default function App() {
     }
   }, [user]);
 
+  // ── Recipes CRUD ───────────────────────────────────────────────────────────
   const loadRecipes = async (userId) => {
     setLoadingRecipes(true);
     const { data, error } = await supabase
@@ -1185,6 +1352,7 @@ export default function App() {
   };
 
   const handleUpdateRecipe = async (recipeId, updates) => {
+    // Convert camelCase to snake_case for Supabase columns
     const dbUpdates = {
       title: updates.title,
       category: updates.category,
@@ -1235,11 +1403,14 @@ export default function App() {
     }
   };
 
+  // Scale ingredient amounts for serving size toggle
   const scaleIngredient = (ingredient, multiplier) => {
     if (multiplier === 1 || !ingredient) return ingredient;
+    // Match leading number, fraction, or mixed number (e.g. "2", "1/2", "1 1/2", "2.5")
     return ingredient.replace(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.\d+|\d+)/, (match) => {
       let value;
       if (match.includes(" ")) {
+        // Mixed number like "1 1/2"
         const [whole, frac] = match.split(" ");
         const [num, den] = frac.split("/");
         value = parseInt(whole) + parseInt(num) / parseInt(den);
@@ -1250,7 +1421,9 @@ export default function App() {
         value = parseFloat(match);
       }
       const scaled = value * multiplier;
+      // Format nicely — use fractions for common values
       if (scaled === Math.floor(scaled)) return String(scaled);
+      // Check for common fractions
       const rounded = Math.round(scaled * 100) / 100;
       const whole = Math.floor(rounded);
       const decimal = rounded - whole;
@@ -1264,6 +1437,7 @@ export default function App() {
     });
   };
 
+  // ── Normalize recipe fields ────────────────────────────────────────────────
   const normalize = (r) => ({
     ...r,
     prepTime: r.prepTime || r.prep_time || "",
@@ -1277,18 +1451,21 @@ export default function App() {
     return mc && mq;
   });
 
+  // ── Loading auth ───────────────────────────────────────────────────────────
   if (loadingAuth) return (
     <>
       <style>{CSS}</style>
       <div style={{minHeight:"100vh",background:B.black,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:20}}>
-        <img src="/sprig.png" style={{height:48,width:"auto"}} alt="Gathered"/>
+        <SprigMark size={48} color={B.gold}/>
         <div style={{fontSize:"0.7rem",letterSpacing:"0.3em",textTransform:"uppercase",color:B.mid}}>Loading Gathered…</div>
       </div>
     </>
   );
 
+  // ── Not logged in ──────────────────────────────────────────────────────────
   if (!session) return <AuthScreen onAuth={loadUser}/>;
 
+  // ── App ────────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{CSS}</style>
@@ -1304,7 +1481,7 @@ export default function App() {
             <span style={{display:"block",width:20,height:1.5,background:sidebarOpen?B.gold:B.silver,transition:"all 0.25s",transform:sidebarOpen?"rotate(-45deg) translate(4px,-4.5px)":"none"}}/>
           </button>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/sprig.png" style={{height:26,width:"auto"}} alt="Gathered"/>
+            <SprigMark size={26} color={B.gold}/>
             <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.1rem",letterSpacing:"0.06em",color:B.white}}>{APP_NAME}</span>
           </div>
           <div style={{display:"flex",border:`1px solid ${B.graphite}`,borderRadius:3,overflow:"hidden",marginLeft:"auto"}}>
@@ -1414,14 +1591,12 @@ export default function App() {
 
                 {loadingRecipes ? (
                   <div style={{textAlign:"center",padding:"100px 20px"}}>
-                    <img src="/sprig.png" style={{height:40,width:"auto"}} alt="Gathered"/>
+                    <SprigMark size={40} color={B.gold} />
                     <div style={{fontSize:"0.78rem",color:B.mid,marginTop:16,letterSpacing:"0.1em"}}>Loading your collection…</div>
                   </div>
                 ) : filtered.length===0 ? (
                   <div style={{textAlign:"center",padding:"100px 20px"}}>
-                    <div style={{marginBottom:18,opacity:0.3,display:"flex",justifyContent:"center"}}>
-                      <img src="/sprig.png" style={{height:40,width:"auto"}} alt="Gathered"/>
-                    </div>
+                    <div style={{marginBottom:18,opacity:0.3,display:"flex",justifyContent:"center"}}><SprigMark size={40} color={B.gold}/></div>
                     <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.7rem",color:B.silver,fontWeight:300,marginBottom:10}}>Nothing gathered yet</div>
                     <div style={{fontSize:"0.84rem",color:B.mid,fontWeight:300}}>Tap the menu ☰ then "Add from Photo" to begin</div>
                   </div>

@@ -55,7 +55,24 @@ CRITICAL RULES:
 6. Include baking temperature and time in the notes if mentioned
 7. If multiple images are provided, combine them ONLY if they are clearly the same recipe. If they appear to be different recipes, use only the first one.
 
-Return ONLY raw JSON, no markdown fences, no commentary. Format:
+INGREDIENT SECTIONS — THIS IS CRITICAL:
+Many recipes have multiple ingredient sections with labels like:
+- Filling / Topping / Frosting / Glaze / Crust / Sauce / Dough / Batter / Marinade / Base / Coating / Syrup / Streusel / Ganache
+
+If the recipe has ANY named sections, you MUST use the ingredientSections format instead of the flat ingredients array.
+
+Each section must have:
+- "section": the exact label from the recipe (e.g. "Filling", "Topping", "For the Crust")
+- "items": the list of ingredients in that section exactly as written
+
+If the recipe has NO sections and is just one flat list, use the flat "ingredients" array as normal.
+
+INSTRUCTION SECTIONS:
+Similarly, if instructions are grouped (e.g. "For the filling:", "To assemble:"), preserve those groups using instructionSections with "section" and "steps" fields. Otherwise use the flat "instructions" array.
+
+Return ONLY raw JSON, no markdown fences, no commentary.
+
+FORMAT FOR SIMPLE RECIPES (no sections):
 {
   "title": "exact title from the recipe",
   "category": "Breakfast|Lunch|Dinner|Dessert|Snacks|Drinks|Sides",
@@ -66,6 +83,42 @@ Return ONLY raw JSON, no markdown fences, no commentary. Format:
   "image": "🍪",
   "ingredients": ["exact ingredient 1 as written", "exact ingredient 2 as written"],
   "instructions": ["step 1 exactly as written", "step 2 exactly as written"],
+  "notes": "any personal notes, temperature, or special instructions from the card"
+}
+
+FORMAT FOR RECIPES WITH SECTIONS:
+{
+  "title": "exact title from the recipe",
+  "category": "Breakfast|Lunch|Dinner|Dessert|Snacks|Drinks|Sides",
+  "tags": ["relevant","tags"],
+  "servings": 8,
+  "prepTime": "X min",
+  "cookTime": "X min",
+  "image": "🍪",
+  "ingredientSections": [
+    {
+      "section": "Crust",
+      "items": ["1 cup flour", "1/2 cup butter"]
+    },
+    {
+      "section": "Filling",
+      "items": ["2 cups sugar", "3 eggs"]
+    },
+    {
+      "section": "Topping",
+      "items": ["1/2 cup brown sugar", "1/4 cup butter"]
+    }
+  ],
+  "instructionSections": [
+    {
+      "section": "Make the Crust",
+      "steps": ["Mix flour and butter until crumbly.", "Press into pan."]
+    },
+    {
+      "section": "Make the Filling",
+      "steps": ["Beat eggs and sugar together.", "Pour over crust."]
+    }
+  ],
   "notes": "any personal notes, temperature, or special instructions from the card"
 }`;
 
@@ -78,7 +131,7 @@ Return ONLY raw JSON, no markdown fences, no commentary. Format:
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
-        max_tokens: 2000,
+        max_tokens: 3000,
         messages: [
           {
             role: "user",
@@ -119,6 +172,24 @@ Return ONLY raw JSON, no markdown fences, no commentary. Format:
       return res.status(422).json({
         error: "Couldn't read the recipe clearly. Try better lighting, rotate the card so text is upright, or take multiple close-up photos.",
       });
+    }
+
+    // Normalize: if ingredientSections exists, also build a flat ingredients array for backward compatibility
+    if (recipe.ingredientSections && recipe.ingredientSections.length > 0) {
+      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+        recipe.ingredients = recipe.ingredientSections.flatMap(s =>
+          [`— ${s.section} —`, ...s.items]
+        );
+      }
+    }
+
+    // Normalize: if instructionSections exists, also build a flat instructions array for backward compatibility
+    if (recipe.instructionSections && recipe.instructionSections.length > 0) {
+      if (!recipe.instructions || recipe.instructions.length === 0) {
+        recipe.instructions = recipe.instructionSections.flatMap(s =>
+          [`— ${s.section} —`, ...s.steps]
+        );
+      }
     }
 
     // Validate we got something real

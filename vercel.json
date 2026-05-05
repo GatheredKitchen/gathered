@@ -9,16 +9,8 @@
       "dest": "/login.html"
     },
     {
-      "src": "/terms.html",
-      "dest": "/terms.html"
-    },
-    {
-      "src": "/privacy.html",
-      "dest": "/privacy.html"
-    },
-    {
       "src": "/",
-      "dest": "/public/index.html"
+      "dest": "/public/landing.html"
     }
   ],
   "functions": {

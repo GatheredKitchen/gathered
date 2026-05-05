@@ -3,6 +3,14 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login/(.*)",
+      "destination": "/index.html"
     }
   ],
   "functions": {

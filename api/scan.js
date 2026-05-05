@@ -192,10 +192,13 @@ FORMAT FOR RECIPES WITH SECTIONS:
       }
     }
 
-    // Validate we got something real
-    if (!recipe.title || !recipe.ingredients || recipe.ingredients.length === 0) {
+    // Validate we got something real — check both flat and sectioned formats
+    const hasIngredients = (recipe.ingredients && recipe.ingredients.length > 0) ||
+                           (recipe.ingredientSections && recipe.ingredientSections.length > 0);
+
+    if (!recipe.title || !hasIngredients) {
       return res.status(422).json({
-        error: "No recipe details found. Make sure the full recipe card is visible in the photo.",
+        error: "No recipe found in that image. Make sure the recipe is visible and try again.",
       });
     }
 

@@ -6,11 +6,7 @@
     },
     {
       "source": "/login",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/login/(.*)",
-      "destination": "/index.html"
+      "destination": "/login.html"
     }
   ],
   "functions": {

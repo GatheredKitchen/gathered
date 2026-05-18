@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        app: 'login.html',
+        main: './index.html',
       },
     },
   },

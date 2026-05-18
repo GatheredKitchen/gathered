@@ -38,48 +38,60 @@
       --goldBd: rgba(201,168,76,0.2);
     }
     html { scroll-behavior: smooth; }
-    body { background: var(--black); color: var(--white); font-family: 'Jost', sans-serif; font-weight: 300; overflow-x: hidden; }
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
 
     /* ── NAV ── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; height: 64px;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 48px; background: rgba(10,10,10,0.92);
-      backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201,168,76,0.12);
+      padding: 0 48px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201,168,76,0.12);
       z-index: 1000;
     }
     .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-    .nav-brand img { height: 28px; width: auto; }
-    .nav-wordmark { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 0.06em; color: var(--white); }
+    .nav-brand img { height: 28px; width: auto; display: block; }
+    .nav-wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem; letter-spacing: 0.06em; color: var(--white);
+    }
     .nav-actions { display: flex; align-items: center; gap: 12px; }
     .nav-signin {
       display: inline-flex; align-items: center; padding: 9px 20px;
       background: none; color: var(--silver); text-decoration: none;
       font-size: 0.75rem; font-weight: 400; letter-spacing: 0.1em;
-      border: 1px solid var(--smoke); border-radius: 2px; transition: all 0.2s; cursor: pointer;
+      border: 1px solid var(--smoke); border-radius: 2px;
+      transition: all 0.2s; cursor: pointer;
     }
     .nav-signin:hover { border-color: var(--goldBd); color: var(--gold); }
     .nav-cta {
-      display: inline-flex; align-items: center; gap: 8px; padding: 9px 22px;
-      background: var(--gold); color: var(--black); text-decoration: none;
-      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
-      text-transform: uppercase; border-radius: 2px; transition: opacity 0.2s; cursor: pointer; border: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 22px; background: var(--gold); color: var(--black);
+      text-decoration: none; font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase; border-radius: 2px;
+      transition: opacity 0.2s; cursor: pointer; border: none;
     }
     .nav-cta:hover { opacity: 0.88; }
 
-    /* ── APP SECTION ── */
+    /* ── APP MOUNT ── */
     #app-section {
-      padding-top: 64px; /* offset for fixed nav */
-      min-height: 100vh;
+      padding-top: 64px;
       background: var(--black);
     }
-    #root { min-height: calc(100vh - 64px); }
 
     /* ── HERO ── */
     .hero {
       min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center;
-      padding: 120px 40px 80px; position: relative; overflow: hidden;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 40px 80px;
+      position: relative; overflow: hidden;
     }
     .hero::before {
       content: ''; position: absolute; inset: 0;
@@ -178,7 +190,7 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
-      nav { padding: 0 24px; }
+      nav { padding: 0 20px; }
       .nav-signin { display: none; }
       section { padding: 72px 24px; }
       .how-section, .emotional-section, .cta-section { padding: 72px 24px; }
@@ -197,156 +209,167 @@
 <!-- ── FIXED NAV ── -->
 <nav>
   <a href="/" class="nav-brand">
-    <img src="/sprig.png" alt="Gathered"/>
+    <img src="/sprig.png" alt="Gathered" />
     <span class="nav-wordmark">Gathered</span>
   </a>
   <div class="nav-actions">
-    <a class="nav-signin" onclick="scrollToApp(event)" href="#app-section">Sign In</a>
-    <a class="nav-cta" onclick="scrollToApp(event)" href="#app-section">Start Free →</a>
+    <a class="nav-signin" href="#app-section" onclick="scrollToApp(event)">Sign In</a>
+    <a class="nav-cta" href="#app-section" onclick="scrollToApp(event)">Start Free →</a>
   </div>
 </nav>
 
-<!-- ── REACT APP — mounts at top of page ── -->
+<!-- ── REACT APP — mounts here ── -->
 <div id="app-section">
   <div id="root"></div>
 </div>
 
-<!-- ── LANDING PAGE — flows below app ── -->
+<!-- ── LANDING PAGE ── -->
+<div id="landing-content">
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-border"><div class="corner-br"></div></div>
-  <div class="hero-eyebrow">Every recipe worth keeping</div>
-  <img src="/sprig.png" class="hero-sprig" alt="Gathered"/>
-  <h1 class="hero-h1">Scan. Save.<br><em>Share forever.</em></h1>
-  <p class="hero-sub">AI-powered recipe scanning turns any photo into a beautiful, searchable collection — with branded share cards, your personal ebook, and everything organized exactly the way you want it.</p>
-  <div class="hero-actions">
-    <a class="btn-primary" onclick="scrollToApp(event)" href="#app-section">Start Free — It's Quick →</a>
-    <a href="#how-it-works" class="btn-ghost">See How It Works ↓</a>
-  </div>
-  <div class="hero-tagline">Free to start <span>✦</span> No credit card required <span>✦</span> usegathered.app</div>
-</div>
-
-<div class="divider-line"></div>
-
-<!-- HOW IT WORKS -->
-<div class="how-section" id="how-it-works">
-  <div class="how-inner">
-    <div class="how-header reveal">
-      <span class="section-eyebrow">Getting Started</span>
-      <h2 class="section-heading">Up and running<br><em>in minutes.</em></h2>
-      <p class="section-sub" style="margin:16px auto 0;">Three simple steps from zero to your entire recipe collection living in your pocket.</p>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-border"><div class="corner-br"></div></div>
+    <div class="hero-eyebrow">Every recipe worth keeping</div>
+    <img src="/sprig.png" class="hero-sprig" alt="Gathered" />
+    <h1 class="hero-h1">Scan. Save.<br><em>Share forever.</em></h1>
+    <p class="hero-sub">AI-powered recipe scanning turns any photo into a beautiful, searchable collection — with branded share cards, your personal ebook, and everything organized exactly the way you want it.</p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Start Free — It's Quick →</a>
+      <a href="#how-it-works" class="btn-ghost">See How It Works ↓</a>
     </div>
-    <div class="steps-grid">
-      <div class="step reveal">
-        <span class="step-number">01</span>
-        <span class="step-icon">👤</span>
-        <div class="step-title">Create Your Account</div>
-        <p class="step-desc">Free in seconds. Just your name, email, and a password — and your personal collection is ready to go.</p>
-        <div class="step-detail"><strong>Free plan includes 10 recipes.</strong> No credit card required. Upgrade to Pro anytime for unlimited recipes, ebook generation, and more.</div>
+    <div class="hero-tagline">Free to start <span>✦</span> No credit card required <span>✦</span> usegathered.app</div>
+  </div>
+
+  <div class="divider-line"></div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-section" id="how-it-works">
+    <div class="how-inner">
+      <div class="how-header reveal">
+        <span class="section-eyebrow">Getting Started</span>
+        <h2 class="section-heading">Up and running<br><em>in minutes.</em></h2>
+        <p class="section-sub" style="margin:16px auto 0;">Three simple steps from zero to your entire recipe collection living in your pocket.</p>
       </div>
-      <div class="step reveal">
-        <span class="step-number">02</span>
-        <span class="step-icon">📷</span>
-        <div class="step-title">Scan Your Recipes</div>
-        <p class="step-desc">Point your camera at any recipe — handwritten card, cookbook page, screenshot, or printed sheet. Gathered's AI reads it instantly.</p>
-        <div class="step-detail"><strong>Tips for best results:</strong> Good lighting, card facing up, full recipe visible in frame. Multi-photo scanning supported for long recipes.</div>
-      </div>
-      <div class="step reveal">
-        <span class="step-number">03</span>
-        <span class="step-icon">📱</span>
-        <div class="step-title">Add to Your Home Screen</div>
-        <p class="step-desc">Install Gathered like an app — right on your home screen, one tap away whenever you need it in the kitchen.</p>
-        <div class="step-detail">
-          <div class="device-tabs">
-            <button class="device-tab active" onclick="switchDevice('ios', this)">iPhone</button>
-            <button class="device-tab" onclick="switchDevice('android', this)">Android</button>
-          </div>
-          <div class="device-instructions active" id="ios-steps">
-            <ol>
-              <li>Open <strong style="color:var(--gold)">usegathered.app</strong> in Safari</li>
-              <li>Tap the <strong style="color:var(--gold)">Share</strong> button (box with arrow)</li>
-              <li>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></li>
-              <li>Tap <strong style="color:var(--gold)">Add</strong> — Gathered appears on your home screen</li>
-            </ol>
-          </div>
-          <div class="device-instructions" id="android-steps">
-            <ol>
-              <li>Open <strong style="color:var(--gold)">usegathered.app</strong> in Chrome</li>
-              <li>Tap the <strong style="color:var(--gold)">⋮ menu</strong> (three dots, top right)</li>
-              <li>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></li>
-              <li>Tap <strong style="color:var(--gold)">Add</strong></li>
-            </ol>
+      <div class="steps-grid">
+        <div class="step reveal">
+          <span class="step-number">01</span>
+          <span class="step-icon">👤</span>
+          <div class="step-title">Create Your Account</div>
+          <p class="step-desc">Free in seconds. Just your name, email, and a password — and your personal collection is ready to go.</p>
+          <div class="step-detail"><strong>Free plan includes 10 recipes.</strong> No credit card required. Upgrade to Pro anytime for unlimited recipes, ebook generation, and more.</div>
+        </div>
+        <div class="step reveal">
+          <span class="step-number">02</span>
+          <span class="step-icon">📷</span>
+          <div class="step-title">Scan Your Recipes</div>
+          <p class="step-desc">Point your camera at any recipe — handwritten card, cookbook page, screenshot, or printed sheet. Gathered's AI reads it instantly.</p>
+          <div class="step-detail"><strong>Tips for best results:</strong> Good lighting, card facing up, full recipe visible in frame. Multi-photo scanning supported for long recipes.</div>
+        </div>
+        <div class="step reveal">
+          <span class="step-number">03</span>
+          <span class="step-icon">📱</span>
+          <div class="step-title">Add to Your Home Screen</div>
+          <p class="step-desc">Install Gathered like an app — right on your home screen, one tap away whenever you need it in the kitchen.</p>
+          <div class="step-detail">
+            <div class="device-tabs">
+              <button class="device-tab active" onclick="switchDevice('ios', this)">iPhone</button>
+              <button class="device-tab" onclick="switchDevice('android', this)">Android</button>
+            </div>
+            <div class="device-instructions active" id="ios-steps">
+              <ol>
+                <li>Open <strong style="color:var(--gold)">usegathered.app</strong> in Safari</li>
+                <li>Tap the <strong style="color:var(--gold)">Share</strong> button (box with arrow)</li>
+                <li>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></li>
+                <li>Tap <strong style="color:var(--gold)">Add</strong> — Gathered appears on your home screen</li>
+              </ol>
+            </div>
+            <div class="device-instructions" id="android-steps">
+              <ol>
+                <li>Open <strong style="color:var(--gold)">usegathered.app</strong> in Chrome</li>
+                <li>Tap the <strong style="color:var(--gold)">⋮ menu</strong> (three dots, top right)</li>
+                <li>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></li>
+                <li>Tap <strong style="color:var(--gold)">Add</strong></li>
+              </ol>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="divider-line"></div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="reveal" style="margin-bottom:60px;">
+      <span class="section-eyebrow">What Gathered Does</span>
+      <h2 class="section-heading">Everything your<br><em>recipes deserve.</em></h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal"><span class="feature-badge">Feature 01</span><span class="feature-icon">📷</span><div class="feature-title">AI Recipe Scanning</div><p class="feature-desc">Point your camera at any recipe — handwritten cards, cookbooks, screenshots, printed sheets. Gathered reads it exactly as written.</p></div>
+      <div class="feature-card reveal"><span class="feature-badge">Feature 02</span><span class="feature-icon">⚖️</span><div class="feature-title">Instant Recipe Scaling</div><p class="feature-desc">Cooking for 2 or 12? Tap ½×, 1×, 2×, or 3× and every ingredient updates instantly. No math. No mistakes.</p></div>
+      <div class="feature-card reveal"><span class="feature-badge">Feature 03</span><span class="feature-icon">🌾</span><div class="feature-title">Beautiful Share Cards</div><p class="feature-desc">Share any recipe as a stunning branded card — full ingredients, instructions, your name on it. One tap. Beautiful every time.</p></div>
+      <div class="feature-card reveal"><span class="feature-badge">Feature 04</span><span class="feature-icon">📚</span><div class="feature-title">Your Personal Ebook</div><p class="feature-desc">Generate a beautiful personalized cookbook with your name on the cover, your recipes inside, organized by category.</p></div>
+      <div class="feature-card reveal"><span class="feature-badge">Feature 05</span><span class="feature-icon">✏️</span><div class="feature-title">Edit Everything</div><p class="feature-desc">AI scans it, you perfect it. Edit the title, swap the category, fix an ingredient, add the note only your family would know.</p></div>
+      <div class="feature-card coming-soon reveal"><span class="feature-badge soon">Coming in V2</span><span class="feature-icon">📅</span><div class="feature-title">Meal Planner + Smart Grocery List</div><p class="feature-desc">Plan your week, scale your recipes, and get a smart grocery list built automatically. Get in early. 🌾</p></div>
+    </div>
+  </section>
+
+  <div class="divider-line"></div>
+
+  <!-- EMOTIONAL -->
+  <div class="emotional-section">
+    <div class="emotional-inner reveal">
+      <img src="/sprig.png" style="height:40px;width:auto;margin-bottom:28px;opacity:0.6;" alt="Gathered" />
+      <p class="emotional-quote">Heirloom recipe cards.<br>Pinterest saves. Cookbook pages.<br><em>Camera roll screenshots.</em></p>
+      <p class="emotional-sub">Gathered brings them all home — organized, searchable, beautifully preserved.<br>Every recipe worth keeping, finally in one place. Forever.</p>
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Save Them Forever →</a>
+    </div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div class="cta-section">
+    <div class="cta-inner reveal">
+      <img src="/sprig.png" class="cta-sprig" alt="Gathered" />
+      <h2 class="cta-heading">Start your collection.<br><em>Free today.</em></h2>
+      <p class="cta-sub">10 recipes free. No credit card required.<br>Upgrade to Pro anytime for unlimited recipes, ebook generation, and everything coming in V2.</p>
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)" style="font-size:0.86rem;padding:18px 44px;">Create My Collection →</a>
+      <p class="cta-fine">usegathered.app · Every recipe worth keeping. 🌾</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">Gathered</div>
+    <div class="footer-links">
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="#app-section" onclick="scrollToApp(event)">Sign In</a>
+    </div>
+    <div class="footer-copy">© 2025 Gathered · usegathered.app</div>
+  </footer>
+
 </div>
-
-<div class="divider-line"></div>
-
-<!-- FEATURES -->
-<section id="features">
-  <div class="reveal" style="margin-bottom:60px;">
-    <span class="section-eyebrow">What Gathered Does</span>
-    <h2 class="section-heading">Everything your<br><em>recipes deserve.</em></h2>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card reveal"><span class="feature-badge">Feature 01</span><span class="feature-icon">📷</span><div class="feature-title">AI Recipe Scanning</div><p class="feature-desc">Point your camera at any recipe — handwritten cards, cookbooks, screenshots, printed sheets. Gathered reads it exactly as written.</p></div>
-    <div class="feature-card reveal"><span class="feature-badge">Feature 02</span><span class="feature-icon">⚖️</span><div class="feature-title">Instant Recipe Scaling</div><p class="feature-desc">Cooking for 2 or 12? Tap ½×, 1×, 2×, or 3× and every ingredient updates instantly. No math. No mistakes.</p></div>
-    <div class="feature-card reveal"><span class="feature-badge">Feature 03</span><span class="feature-icon">🌾</span><div class="feature-title">Beautiful Share Cards</div><p class="feature-desc">Share any recipe as a stunning branded card — full ingredients, instructions, your name on it. One tap. Beautiful every time.</p></div>
-    <div class="feature-card reveal"><span class="feature-badge">Feature 04</span><span class="feature-icon">📚</span><div class="feature-title">Your Personal Ebook</div><p class="feature-desc">Generate a beautiful personalized cookbook with your name on the cover, your recipes inside, organized by category.</p></div>
-    <div class="feature-card reveal"><span class="feature-badge">Feature 05</span><span class="feature-icon">✏️</span><div class="feature-title">Edit Everything</div><p class="feature-desc">AI scans it, you perfect it. Edit the title, swap the category, fix an ingredient, add the note only your family would know.</p></div>
-    <div class="feature-card coming-soon reveal"><span class="feature-badge soon">Coming in V2</span><span class="feature-icon">📅</span><div class="feature-title">Meal Planner + Smart Grocery List</div><p class="feature-desc">Plan your week, scale your recipes, and get a smart grocery list built automatically. Get in early. 🌾</p></div>
-  </div>
-</section>
-
-<div class="divider-line"></div>
-
-<!-- EMOTIONAL -->
-<div class="emotional-section">
-  <div class="emotional-inner reveal">
-    <img src="/sprig.png" style="height:40px;width:auto;margin-bottom:28px;opacity:0.6;" alt="Gathered"/>
-    <p class="emotional-quote">Heirloom recipe cards.<br>Pinterest saves. Cookbook pages.<br><em>Camera roll screenshots.</em></p>
-    <p class="emotional-sub">Gathered brings them all home — organized, searchable, beautifully preserved.<br>Every recipe worth keeping, finally in one place. Forever.</p>
-    <a class="btn-primary" onclick="scrollToApp(event)" href="#app-section">Save Them Forever →</a>
-  </div>
-</div>
-
-<!-- FINAL CTA -->
-<div class="cta-section">
-  <div class="cta-inner reveal">
-    <img src="/sprig.png" class="cta-sprig" alt="Gathered"/>
-    <h2 class="cta-heading">Start your collection.<br><em>Free today.</em></h2>
-    <p class="cta-sub">10 recipes free. No credit card required.<br>Upgrade to Pro anytime for unlimited recipes, ebook generation, and everything coming in V2.</p>
-    <a class="btn-primary" onclick="scrollToApp(event)" href="#app-section" style="font-size:0.86rem;padding:18px 44px;">Create My Collection →</a>
-    <p class="cta-fine">usegathered.app · Every recipe worth keeping. 🌾</p>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-brand">Gathered</div>
-  <div class="footer-links">
-    <a href="/terms.html">Terms</a>
-    <a href="/privacy.html">Privacy</a>
-    <a onclick="scrollToApp(event)" href="#app-section">Sign In</a>
-  </div>
-  <div class="footer-copy">© 2025 Gathered · usegathered.app</div>
-</footer>
 
 <!-- React app -->
 <script type="module" src="/src/main.jsx"></script>
 
 <script>
-  // Scroll to app section smoothly
   function scrollToApp(e) {
     e.preventDefault();
     document.getElementById('app-section').scrollIntoView({ behavior: 'smooth' });
   }
 
-  // Scroll reveal
+  window.hideLanding = function() {
+    const el = document.getElementById('landing-content');
+    if (el) el.style.display = 'none';
+  };
+
+  window.showLanding = function() {
+    const el = document.getElementById('landing-content');
+    if (el) el.style.display = 'block';
+  };
+
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
@@ -358,7 +381,6 @@
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
 
-  // Device tabs
   function switchDevice(device, btn) {
     document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.device-instructions').forEach(d => d.classList.remove('active'));

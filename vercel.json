@@ -5,12 +5,8 @@
       "dest": "/api/$1"
     },
     {
-      "src": "/login",
-      "dest": "/login.html"
-    },
-    {
-      "src": "/",
-      "dest": "/public/landing.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "functions": {

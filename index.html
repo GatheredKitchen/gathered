@@ -45,8 +45,6 @@
       font-weight: 300;
       overflow-x: hidden;
     }
-
-    /* NAV */
     nav {
       position: fixed; top: 0; left: 0; right: 0; height: 64px;
       display: flex; align-items: center; justify-content: space-between;
@@ -58,38 +56,11 @@
     }
     .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
     .nav-brand img { height: 28px; width: auto; display: block; }
-    .nav-wordmark {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.15rem; letter-spacing: 0.06em; color: var(--white);
-    }
-    .nav-tagline {
-      font-size: 0.72rem;
-      color: var(--mid);
-      letter-spacing: 0.1em;
-    }
-
-    /* APP MOUNT */
-    #app-section {
-      padding-top: 64px;
-      background: var(--black);
-      position: relative;
-      z-index: 10;
-    }
-
-    /* HERO */
-    .hero {
-      min-height: auto;
-      padding: 80px 40px 60px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-align: center;
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
+    .nav-wordmark { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 0.06em; color: var(--white); }
+    .nav-tagline { font-size: 0.72rem; color: var(--mid); letter-spacing: 0.1em; }
+    #app-section { padding-top: 64px; background: var(--black); position: relative; z-index: 10; }
+    .hero { min-height: auto; padding: 80px 40px 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(201,168,76,0.06) 0%, transparent 70%); pointer-events: none; }
     .hero-border { position: absolute; inset: 24px; border: 1px solid rgba(201,168,76,0.15); pointer-events: none; }
     .hero-border::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(201,168,76,0.06); }
     .hero-border::after { content: ''; position: absolute; top: -1px; left: -1px; width: 40px; height: 40px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
@@ -106,16 +77,12 @@
     .btn-ghost:hover { border-color: var(--goldBd); color: var(--gold); }
     .hero-tagline { margin-top: 56px; font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--mid); opacity: 0; animation: fadeUp 0.8s ease 0.8s forwards; }
     .hero-tagline span { color: var(--gold); margin: 0 10px; }
-
-    /* SECTIONS */
     section { padding: 100px 48px; max-width: 1200px; margin: 0 auto; }
     .section-eyebrow { font-size: 0.58rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; display: block; }
     .section-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 300; color: var(--white); line-height: 1.1; margin-bottom: 16px; }
     .section-heading em { color: var(--gold); font-style: italic; }
     .section-sub { font-size: 0.92rem; color: var(--silver); font-weight: 300; line-height: 1.8; max-width: 520px; }
     .divider-line { width: 100%; height: 1px; background: linear-gradient(to right, transparent, var(--smoke), transparent); }
-
-    /* HOW IT WORKS */
     .how-section { padding: 100px 48px; background: var(--charcoal); max-width: 100%; }
     .how-inner { max-width: 1100px; margin: 0 auto; }
     .how-header { text-align: center; margin-bottom: 72px; }
@@ -137,8 +104,6 @@
     .device-instructions ol { list-style: none; counter-reset: step-counter; }
     .device-instructions li { counter-increment: step-counter; display: flex; gap: 10px; margin-bottom: 4px; }
     .device-instructions li::before { content: counter(step-counter) "."; color: var(--gold); font-weight: 600; min-width: 16px; }
-
-    /* FEATURES */
     .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--smoke); border: 1px solid var(--smoke); }
     .feature-card { background: var(--charcoal); padding: 40px 32px; transition: background 0.2s; }
     .feature-card:hover { background: var(--graphite); }
@@ -148,16 +113,12 @@
     .feature-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
     .feature-title { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 400; color: var(--white); margin-bottom: 10px; line-height: 1.2; }
     .feature-desc { font-size: 0.83rem; color: var(--silver); font-weight: 300; line-height: 1.75; }
-
-    /* EMOTIONAL */
     .emotional-section { padding: 120px 48px; background: var(--charcoal); text-align: center; position: relative; overflow: hidden; }
     .emotional-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%); pointer-events: none; }
     .emotional-inner { max-width: 680px; margin: 0 auto; position: relative; }
     .emotional-quote { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 300; font-style: italic; color: var(--white); line-height: 1.4; margin-bottom: 28px; }
     .emotional-quote em { color: var(--gold); font-style: normal; }
     .emotional-sub { font-size: 0.88rem; color: var(--silver); font-weight: 300; line-height: 1.9; margin-bottom: 44px; }
-
-    /* FINAL CTA */
     .cta-section { padding: 120px 48px; text-align: center; position: relative; }
     .cta-section::before { content: ''; position: absolute; inset: 40px; border: 1px solid rgba(201,168,76,0.12); pointer-events: none; }
     .cta-inner { max-width: 600px; margin: 0 auto; position: relative; }
@@ -166,21 +127,15 @@
     .cta-heading em { color: var(--gold); font-style: italic; }
     .cta-sub { font-size: 0.88rem; color: var(--silver); font-weight: 300; line-height: 1.8; margin-bottom: 40px; }
     .cta-fine { margin-top: 16px; font-size: 0.72rem; color: var(--mid); letter-spacing: 0.08em; }
-
-    /* FOOTER */
     footer { padding: 40px 48px; border-top: 1px solid var(--graphite); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
     .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--mid); }
     .footer-links { display: flex; gap: 24px; }
     .footer-links a { font-size: 0.72rem; color: var(--mid); text-decoration: none; letter-spacing: 0.08em; transition: color 0.15s; }
     .footer-links a:hover { color: var(--gold); }
     .footer-copy { font-size: 0.68rem; color: var(--smoke); letter-spacing: 0.1em; }
-
-    /* ANIMATIONS */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-
-    /* RESPONSIVE */
     @media (max-width: 768px) {
       nav { padding: 0 20px; }
       section { padding: 72px 24px; }
@@ -198,7 +153,6 @@
 </head>
 <body>
 
-<!-- FIXED NAV -->
 <nav>
   <a href="/" class="nav-brand">
     <img src="/sprig.png" alt="Gathered" />
@@ -207,15 +161,12 @@
   <span class="nav-tagline">Sign in or create your free account below ↓</span>
 </nav>
 
-<!-- REACT APP — mounts here, always visible at top -->
 <div id="app-section">
   <div id="root"></div>
 </div>
 
-<!-- MARKETING CONTENT — shows below the login form -->
 <div id="landing-content">
 
-  <!-- HERO -->
   <div class="hero">
     <div class="hero-border"><div class="corner-br"></div></div>
     <div class="hero-eyebrow">Every recipe worth keeping</div>
@@ -223,15 +174,14 @@
     <h1 class="hero-h1">Scan. Save.<br><em>Share forever.</em></h1>
     <p class="hero-sub">AI-powered recipe scanning turns any photo into a beautiful, searchable collection — with branded share cards, your personal ebook, and everything organized exactly the way you want it.</p>
     <div class="hero-actions">
-      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Start Free — It's Quick →</a>
-      <a href="#how-it-works" class="btn-ghost">See How It Works ↓</a>
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Start Free — It's Quick</a>
+      <a href="#how-it-works" class="btn-ghost">See How It Works</a>
     </div>
     <div class="hero-tagline">Free to start <span>✦</span> No credit card required <span>✦</span> usegathered.app</div>
   </div>
 
   <div class="divider-line"></div>
 
-  <!-- HOW IT WORKS -->
   <div class="how-section" id="how-it-works">
     <div class="how-inner">
       <div class="how-header reveal">
@@ -242,21 +192,21 @@
       <div class="steps-grid">
         <div class="step reveal">
           <span class="step-number">01</span>
-          <span class="step-icon">👤</span>
+          <span class="step-icon">&#128100;</span>
           <div class="step-title">Create Your Account</div>
           <p class="step-desc">Free in seconds. Just your name, email, and a password — and your personal collection is ready to go.</p>
           <div class="step-detail"><strong>Free plan includes 10 recipes.</strong> No credit card required. Upgrade to Pro anytime for unlimited recipes, ebook generation, and more.</div>
         </div>
         <div class="step reveal">
           <span class="step-number">02</span>
-          <span class="step-icon">📷</span>
+          <span class="step-icon">&#128247;</span>
           <div class="step-title">Scan Your Recipes</div>
           <p class="step-desc">Point your camera at any recipe — handwritten card, cookbook page, screenshot, or printed sheet. Gathered's AI reads it instantly.</p>
           <div class="step-detail"><strong>Tips for best results:</strong> Good lighting, card facing up, full recipe visible in frame. Multi-photo scanning supported for long recipes.</div>
         </div>
         <div class="step reveal">
           <span class="step-number">03</span>
-          <span class="step-icon">📱</span>
+          <span class="step-icon">&#128241;</span>
           <div class="step-title">Add to Your Home Screen</div>
           <p class="step-desc">Install Gathered like an app — right on your home screen, one tap away whenever you need it in the kitchen.</p>
           <div class="step-detail">
@@ -275,7 +225,7 @@
             <div class="device-instructions" id="android-steps">
               <ol>
                 <li>Open <strong style="color:var(--gold)">usegathered.app</strong> in Chrome</li>
-                <li>Tap the <strong style="color:var(--gold)">⋮ menu</strong> (three dots, top right)</li>
+                <li>Tap the <strong style="color:var(--gold)">menu</strong> (three dots, top right)</li>
                 <li>Tap <strong style="color:var(--gold)">"Add to Home Screen"</strong></li>
                 <li>Tap <strong style="color:var(--gold)">Add</strong></li>
               </ol>
@@ -288,48 +238,119 @@
 
   <div class="divider-line"></div>
 
-  <!-- FEATURES -->
-<section id="features">
-  <div class="reveal" style="margin-bottom:60px;">
-    <span class="section-eyebrow">What Gathered Does</span>
-    <h2 class="section-heading">Everything your<br><em>recipes deserve.</em></h2>
+  <section id="features">
+    <div class="reveal" style="margin-bottom:60px;">
+      <span class="section-eyebrow">What Gathered Does</span>
+      <h2 class="section-heading">Everything your<br><em>recipes deserve.</em></h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="feature-badge">Feature 01</span>
+        <span class="feature-icon">&#128247;</span>
+        <div class="feature-title">AI Recipe Scanning</div>
+        <p class="feature-desc">Point your camera at any recipe — handwritten cards, cookbooks, screenshots, printed sheets. Gathered reads it exactly as written.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge">Feature 02</span>
+        <span class="feature-icon">&#9878;&#65039;</span>
+        <div class="feature-title">Instant Recipe Scaling</div>
+        <p class="feature-desc">Cooking for 2 or 12? Tap 1/2x, 1x, 2x, or 3x and every ingredient updates instantly. No math. No mistakes.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge">Feature 03</span>
+        <span class="feature-icon">&#127806;</span>
+        <div class="feature-title">Beautiful Share Cards</div>
+        <p class="feature-desc">Share any recipe as a stunning branded card — full ingredients, instructions, your name on it. One tap. Beautiful every time.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge">Feature 04</span>
+        <span class="feature-icon">&#128218;</span>
+        <div class="feature-title">Your Personal Ebook</div>
+        <p class="feature-desc">Generate a beautiful personalized cookbook with your name on the cover, your recipes inside, organized by category.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge">Feature 05</span>
+        <span class="feature-icon">&#128221;</span>
+        <div class="feature-title">Edit Everything</div>
+        <p class="feature-desc">AI scans it, you perfect it. Edit the title, swap the category, fix an ingredient, add the note only your family would know.</p>
+      </div>
+      <div class="feature-card coming-soon reveal">
+        <span class="feature-badge soon">Coming in V2</span>
+        <span class="feature-icon">&#128197;</span>
+        <div class="feature-title">Meal Planner + Smart Grocery List</div>
+        <p class="feature-desc">Plan your week, scale your recipes, and get a smart grocery list built automatically. Get in early.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-line"></div>
+
+  <div class="emotional-section">
+    <div class="emotional-inner reveal">
+      <img src="/sprig.png" style="height:40px;width:auto;margin-bottom:28px;opacity:0.6;" alt="Gathered" />
+      <p class="emotional-quote">Heirloom recipe cards.<br>Pinterest saves. Cookbook pages.<br><em>Camera roll screenshots.</em></p>
+      <p class="emotional-sub">Gathered brings them all home — organized, searchable, beautifully preserved.<br>Every recipe worth keeping, finally in one place. Forever.</p>
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Save Them Forever</a>
+    </div>
   </div>
-  <div class="features-grid">
-    <div class="feature-card reveal">
-      <span class="feature-badge">Feature 01</span>
-      <span class="feature-icon">&#128247;</span>
-      <div class="feature-title">AI Recipe Scanning</div>
-      <p class="feature-desc">Point your camera at any recipe — handwritten cards, cookbooks, screenshots, printed sheets. Gathered reads it exactly as written.</p>
-    </div>
-    <div class="feature-card reveal">
-      <span class="feature-badge">Feature 02</span>
-      <span class="feature-icon">&#9878;&#65039;</span>
-      <div class="feature-title">Instant Recipe Scaling</div>
-      <p class="feature-desc">Cooking for 2 or 12? Tap 1/2x, 1x, 2x, or 3x and every ingredient updates instantly. No math. No mistakes.</p>
-    </div>
-    <div class="feature-card reveal">
-      <span class="feature-badge">Feature 03</span>
-      <span class="feature-icon">&#127806;</span>
-      <div class="feature-title">Beautiful Share Cards</div>
-      <p class="feature-desc">Share any recipe as a stunning branded card — full ingredients, instructions, your name on it. One tap. Beautiful every time.</p>
-    </div>
-    <div class="feature-card reveal">
-      <span class="feature-badge">Feature 04</span>
-      <span class="feature-icon">&#128218;</span>
-      <div class="feature-title">Your Personal Ebook</div>
-      <p class="feature-desc">Generate a beautiful personalized cookbook with your name on the cover, your recipes inside, organized by category.</p>
-    </div>
-    <div class="feature-card reveal">
-      <span class="feature-badge">Feature 05</span>
-      <span class="feature-icon">&#128221;</span>
-      <div class="feature-title">Edit Everything</div>
-      <p class="feature-desc">AI scans it, you perfect it. Edit the title, swap the category, fix an ingredient, add the note only your family would know.</p>
-    </div>
-    <div class="feature-card coming-soon reveal">
-      <span class="feature-badge soon">Coming in V2</span>
-      <span class="feature-icon">&#128197;</span>
-      <div class="feature-title">Meal Planner + Smart Grocery List</div>
-      <p class="feature-desc">Plan your week, scale your recipes, and get a smart grocery list built automatically. Get in early.</p>
+
+  <div class="cta-section">
+    <div class="cta-inner reveal">
+      <img src="/sprig.png" class="cta-sprig" alt="Gathered" />
+      <h2 class="cta-heading">Start your collection.<br><em>Free today.</em></h2>
+      <p class="cta-sub">10 recipes free. No credit card required.<br>Upgrade to Pro anytime for unlimited recipes, ebook generation, and everything coming in V2.</p>
+      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)" style="font-size:0.86rem;padding:18px 44px;">Create My Collection</a>
+      <p class="cta-fine">usegathered.app · Every recipe worth keeping.</p>
     </div>
   </div>
-</section>
+
+  <footer>
+    <div class="footer-brand">Gathered</div>
+    <div class="footer-links">
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+    </div>
+    <div class="footer-copy">© 2025 Gathered · usegathered.app</div>
+  </footer>
+
+</div>
+
+<script type="module" src="/src/main.jsx"></script>
+
+<script>
+  function scrollToApp(e) {
+    e.preventDefault();
+    document.getElementById('app-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  window.hideLanding = function() {
+    const el = document.getElementById('landing-content');
+    if (el) el.style.display = 'none';
+  };
+
+  window.showLanding = function() {
+    const el = document.getElementById('landing-content');
+    if (el) el.style.display = 'block';
+  };
+
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  function switchDevice(device, btn) {
+    document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.device-instructions').forEach(d => d.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(device + '-steps').classList.add('active');
+  }
+</script>
+
+</body>
+</html>

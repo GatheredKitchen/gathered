@@ -30,13 +30,17 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --black: #0A0A0A; --charcoal: #111111; --graphite: #1C1C1C;
-      --smoke: #2A2A2A; --mid: #555555; --silver: #999999;
-      --white: #FFFFFF; --gold: #C9A84C; --goldL: #E2C97E;
-      --goldD: #6B5010; --goldBg: rgba(201,168,76,0.07);
-      --goldBd: rgba(201,168,76,0.2);
-    }
+   :root {
+  --black: #0A0A0A; --charcoal: #111111; --graphite: #1C1C1C;
+  --smoke: #2A2A2A; --mid: #555555; --silver: #999999;
+  --white: #FFFFFF; --gold: #C9A84C; --goldL: #E2C97E;
+  --goldD: #6B5010; --goldBg: rgba(201,168,76,0.07);
+  --goldBd: rgba(201,168,76,0.2);
+}
+#app-section {
+  position: relative;
+  z-index: 10;
+}
     html { scroll-behavior: smooth; }
     body {
       background: var(--black);

@@ -30,17 +30,13 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-   :root {
-  --black: #0A0A0A; --charcoal: #111111; --graphite: #1C1C1C;
-  --smoke: #2A2A2A; --mid: #555555; --silver: #999999;
-  --white: #FFFFFF; --gold: #C9A84C; --goldL: #E2C97E;
-  --goldD: #6B5010; --goldBg: rgba(201,168,76,0.07);
-  --goldBd: rgba(201,168,76,0.2);
-}
-#app-section {
-  position: relative;
-  z-index: 10;
-}
+    :root {
+      --black: #0A0A0A; --charcoal: #111111; --graphite: #1C1C1C;
+      --smoke: #2A2A2A; --mid: #555555; --silver: #999999;
+      --white: #FFFFFF; --gold: #C9A84C; --goldL: #E2C97E;
+      --goldD: #6B5010; --goldBg: rgba(201,168,76,0.07);
+      --goldBd: rgba(201,168,76,0.2);
+    }
     html { scroll-behavior: smooth; }
     body {
       background: var(--black);
@@ -76,13 +72,17 @@
     #app-section {
       padding-top: 64px;
       background: var(--black);
+      position: relative;
+      z-index: 10;
     }
 
     /* HERO */
     .hero {
-      min-height: 100vh; display: flex; flex-direction: column;
+      min-height: auto;
+      padding: 80px 40px 60px;
+      display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      text-align: center; padding: 120px 40px 80px;
+      text-align: center;
       position: relative; overflow: hidden;
     }
     .hero::before {
@@ -187,7 +187,7 @@
       .how-section, .emotional-section, .cta-section { padding: 72px 24px; }
       footer { padding: 32px 24px; flex-direction: column; text-align: center; }
       .steps-grid, .features-grid { grid-template-columns: 1fr; }
-      .hero { padding: 100px 24px 60px; }
+      .hero { padding: 60px 24px 40px; }
       .hero-border { inset: 12px; }
       .nav-tagline { display: none; }
     }
@@ -207,12 +207,12 @@
   <span class="nav-tagline">Sign in or create your free account below ↓</span>
 </nav>
 
-<!-- REACT APP -->
+<!-- REACT APP — mounts here, always visible at top -->
 <div id="app-section">
   <div id="root"></div>
 </div>
 
-<!-- MARKETING CONTENT -->
+<!-- MARKETING CONTENT — shows below the login form -->
 <div id="landing-content">
 
   <!-- HERO -->
@@ -300,82 +300,4 @@
       <div class="feature-card reveal"><span class="feature-badge">Feature 03</span><span class="feature-icon">🌾</span><div class="feature-title">Beautiful Share Cards</div><p class="feature-desc">Share any recipe as a stunning branded card — full ingredients, instructions, your name on it. One tap. Beautiful every time.</p></div>
       <div class="feature-card reveal"><span class="feature-badge">Feature 04</span><span class="feature-icon">📚</span><div class="feature-title">Your Personal Ebook</div><p class="feature-desc">Generate a beautiful personalized cookbook with your name on the cover, your recipes inside, organized by category.</p></div>
       <div class="feature-card reveal"><span class="feature-badge">Feature 05</span><span class="feature-icon">✏️</span><div class="feature-title">Edit Everything</div><p class="feature-desc">AI scans it, you perfect it. Edit the title, swap the category, fix an ingredient, add the note only your family would know.</p></div>
-      <div class="feature-card coming-soon reveal"><span class="feature-badge soon">Coming in V2</span><span class="feature-icon">📅</span><div class="feature-title">Meal Planner + Smart Grocery List</div><p class="feature-desc">Plan your week, scale your recipes, and get a smart grocery list built automatically. Get in early. 🌾</p></div>
-    </div>
-  </section>
-
-  <div class="divider-line"></div>
-
-  <!-- EMOTIONAL -->
-  <div class="emotional-section">
-    <div class="emotional-inner reveal">
-      <img src="/sprig.png" style="height:40px;width:auto;margin-bottom:28px;opacity:0.6;" alt="Gathered" />
-      <p class="emotional-quote">Heirloom recipe cards.<br>Pinterest saves. Cookbook pages.<br><em>Camera roll screenshots.</em></p>
-      <p class="emotional-sub">Gathered brings them all home — organized, searchable, beautifully preserved.<br>Every recipe worth keeping, finally in one place. Forever.</p>
-      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)">Save Them Forever →</a>
-    </div>
-  </div>
-
-  <!-- FINAL CTA -->
-  <div class="cta-section">
-    <div class="cta-inner reveal">
-      <img src="/sprig.png" class="cta-sprig" alt="Gathered" />
-      <h2 class="cta-heading">Start your collection.<br><em>Free today.</em></h2>
-      <p class="cta-sub">10 recipes free. No credit card required.<br>Upgrade to Pro anytime for unlimited recipes, ebook generation, and everything coming in V2.</p>
-      <a class="btn-primary" href="#app-section" onclick="scrollToApp(event)" style="font-size:0.86rem;padding:18px 44px;">Create My Collection →</a>
-      <p class="cta-fine">usegathered.app · Every recipe worth keeping. 🌾</p>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-brand">Gathered</div>
-    <div class="footer-links">
-      <a href="/terms.html">Terms</a>
-      <a href="/privacy.html">Privacy</a>
-    </div>
-    <div class="footer-copy">© 2025 Gathered · usegathered.app</div>
-  </footer>
-
-</div>
-
-<!-- React app -->
-<script type="module" src="/src/main.jsx"></script>
-
-<script>
-  function scrollToApp(e) {
-    e.preventDefault();
-    document.getElementById('app-section').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  window.hideLanding = function() {
-    const el = document.getElementById('landing-content');
-    if (el) el.style.display = 'none';
-  };
-
-  window.showLanding = function() {
-    const el = document.getElementById('landing-content');
-    if (el) el.style.display = 'block';
-  };
-
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('visible'), i * 80);
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => observer.observe(el));
-
-  function switchDevice(device, btn) {
-    document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.device-instructions').forEach(d => d.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(device + '-steps').classList.add('active');
-  }
-</script>
-
-</body>
-</html>
+      <div class="feature-card coming-soon reveal"><span class="feature-badge soon">Coming in V2</span><span class="feature-icon">📅</sp

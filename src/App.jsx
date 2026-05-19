@@ -1217,20 +1217,31 @@ export default function App() {
 
   const showToast = (msg, type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200); };
 
-  // ── Auth listener ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) loadUser(session.user);
-      setLoadingAuth(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) { loadUser(session.user); }
-      else { setUser(null); setRecipes([]); }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+// ── Auth listener ──────────────────────────────────────────────────────────
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+    if (session) {
+      loadUser(session.user);
+      window.hideLanding?.();
+    } else {
+      window.showLanding?.();
+    }
+    setLoadingAuth(false);
+  });
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session);
+    if (session) {
+      loadUser(session.user);
+      window.hideLanding?.();
+    } else {
+      setUser(null);
+      setRecipes([]);
+      window.showLanding?.();
+    }
+  });
+  return () => subscription.unsubscribe();
+}, []);
 
   const loadUser = async (authUser) => {
     const name = authUser.user_metadata?.full_name || authUser.email.split("@")[0];
